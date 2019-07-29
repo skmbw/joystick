@@ -16,11 +16,11 @@ import com.xuershangda.joystick.view.TouchView;
  */
 public class DefaultController implements IJoystickController {
     private Context ctx;
-    private RelativeLayout containerView;
+    protected RelativeLayout containerView;
     private PadStyle padStyle = PadStyle.FIXED;
 
-    private TouchView leftControlTouchView;
-    private TouchView rightControlTouchView;
+    protected TouchView leftControlTouchView;
+    protected TouchView rightControlTouchView;
 
     /**
      * @param context       需要关联context获取资源文件
@@ -54,7 +54,7 @@ public class DefaultController implements IJoystickController {
         rightControlTouchView.setVisibility(View.VISIBLE);
     }
 
-    private void createLeftControlTouchView() {
+    protected void createLeftControlTouchView() {
         TouchViewModel model = new TouchViewModel(
                 R.drawable.ui_pic_joystick_left_pad,
                 R.drawable.ui_pic_joystick_control_ball);
@@ -80,7 +80,7 @@ public class DefaultController implements IJoystickController {
         leftControlTouchView.setLayoutParams(params);
     }
 
-    private void createRightControlTouchView() {
+    protected void createRightControlTouchView() {
         TouchViewModel model = new TouchViewModel(
                 R.drawable.ui_pic_joystick_right_pad,
                 R.drawable.ui_pic_joystick_control_ball);

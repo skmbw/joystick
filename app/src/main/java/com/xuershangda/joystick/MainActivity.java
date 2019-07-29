@@ -11,6 +11,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.xuershangda.joystick.controller.DefaultController;
+import com.xuershangda.joystick.controller.SingleController;
 import com.xuershangda.joystick.listener.JoystickTouchViewListener;
 import com.xuershangda.joystick.utils.BigDecimalUtils;
 
@@ -45,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
     private Double mRightSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
     private TextView mTextView;
+    private TextView mBaseSpeedView;
+    private double baseSpeed = 0.6D;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,82 +57,20 @@ public class MainActivity extends AppCompatActivity {
         mOkHttpClient = new OkHttpClient();
         mBlockingDeque = new LinkedBlockingDeque<>();
         mTextView = findViewById(R.id.sway);
+        mBaseSpeedView = findViewById(R.id.baseSpeed);
 
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
 
-        mDefaultController = new DefaultController(MainActivity.this, viewGroup);
+        mDefaultController = new SingleController(MainActivity.this, viewGroup);
         mDefaultController.createViews();
         mDefaultController.showViews(false);
-
-        mDefaultController.setLeftTouchViewListener(new JoystickTouchViewListener() {
-            @Override
-            public void onTouch(float horizontalPercent, float verticalPercent) {
-                Log.d(TAG, "onTouch left: " + horizontalPercent + ", " + verticalPercent);
-                Double[] speeds = mapSpeedMode3(horizontalPercent, verticalPercent);
-                Double leftSpeed = speeds[0];
-                Double rightSpeed = speeds[1];
-
-                if (Math.abs(BigDecimalUtils.subtract(leftSpeed, mLeftSpeed)) <= 0.01
-                        && Math.abs(BigDecimalUtils.subtract(rightSpeed, mRightSpeed)) <= 0.01) {
-                    Log.d(TAG, "onTouch: 速度变化太小，忽略。mLeftSpeed=" + mLeftSpeed + ", mRightSpeed="
-                            + mRightSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
-                    return;
-                }
-
-                try {
-                    Log.d(TAG, "onTouch: mLeftSpeed=" + mLeftSpeed + ", mRightSpeed="
-                            + mRightSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
-                    mLeftSpeed = leftSpeed;
-                    mRightSpeed = rightSpeed;
-                    Log.d(TAG, "onTouch: 插入控制命令到队列成功。");
-                    mBlockingDeque.put(speeds);
-                    Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
-                } catch (Exception e) {
-                    Log.e(TAG, "onTouch: 产生任务错误。", e);
-                }
-            }
-
-            @Override
-            public void onReset() {
-                // 回到控制点，停止
-                Log.d(TAG, "onReset: left. stop.");
-                Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
-                mBlockingDeque.clear();
-
-                String url = HOST + "teleop/0";
-                call(url, Collections.emptyMap(), new Callback() {
-                    @Override
-                    public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                        Log.e(TAG, "reset onFailure: ", e);
-                    }
-
-                    @Override
-                    public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                        ResponseBody body = response.body();
-                        if (body != null) {
-                            Log.i(TAG, "reset onResponse: " + body.string());
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void onActionDown() {
-                Log.d(TAG, "onActionDown: left");
-            }
-
-            @Override
-            public void onActionUp() {
-                Log.d(TAG, "onActionUp: left, stop.");
-            }
-        });
 
         mDefaultController.setRightTouchViewListener(new JoystickTouchViewListener() {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
                 Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
-                Double[] speeds = mapSpeed(horizontalPercent, verticalPercent);
+                Double[] speeds = mapSpeedMode(horizontalPercent, verticalPercent);
                 Double leftSpeed = speeds[0];
                 Double rightSpeed = speeds[1];
 
@@ -185,22 +126,48 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onActionUp() {
                 Log.d(TAG, "onActionUp: right, stop.");
+            }
+        });
 
-//                String url = HOST + "teleop/1";
+        mDefaultController.setLeftTouchViewListener(new JoystickTouchViewListener() {
+            @Override
+            public void onTouch(float horizontalPercent, float verticalPercent) {
+                Log.d(TAG, "onTouch left: " + horizontalPercent + ", " + verticalPercent);
+                speedUp(horizontalPercent, verticalPercent);
+            }
+
+            @Override
+            public void onReset() {
+                // 回到控制点，停止
+                Log.d(TAG, "onReset: left stop.");
+//                Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
+//                mBlockingDeque.clear();
+//
+//                String url = HOST + "teleop/0";
 //                call(url, Collections.emptyMap(), new Callback() {
 //                    @Override
 //                    public void onFailure(@NotNull Call call, @NotNull IOException e) {
-//                        Log.e(TAG, "onActionUp onFailure: ", e);
+//                        Log.e(TAG, "reset onFailure: ", e);
 //                    }
 //
 //                    @Override
 //                    public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
 //                        ResponseBody body = response.body();
 //                        if (body != null) {
-//                            Log.i(TAG, "onActionUp onResponse: " + body.string());
+//                            Log.i(TAG, "reset onResponse: " + body.string());
 //                        }
 //                    }
 //                });
+            }
+
+            @Override
+            public void onActionDown() {
+                Log.d(TAG, "onActionDown: left");
+            }
+
+            @Override
+            public void onActionUp() {
+                Log.d(TAG, "onActionUp: left, stop.");
             }
         });
 
@@ -225,7 +192,9 @@ public class MainActivity extends AppCompatActivity {
                     mRightSpeed = rightSpeed;
                     runOnUiThread(() -> {
                         double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
+
                         mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
+                        mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
                     });
                     String url = HOST + "teleop/5/" + leftSpeed + "/" + rightSpeed;
                     call(url, Collections.emptyMap(), new Callback() {
@@ -249,8 +218,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private Double[] mapSpeedMode3(double hp, double vp) {
-        double baseSpeed = 1D;
+    private void speedUp(double hp, double vp) {
+        double y = BigDecimalUtils.round(vp, 2);
+
+        if (y > 0) {
+            baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1);
+        } else {
+            baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1);
+        }
+    }
+
+    private Double[] mapSpeedMode(double hp, double vp) {
         double x = BigDecimalUtils.round(hp, 2);
         double y = BigDecimalUtils.round(vp, 2);
 
@@ -294,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         speeds[0] = leftWheel;
-        speeds[1] = rightWheel;
+        speeds[1] = BigDecimalUtils.subtract(rightWheel, 0.15);
 
         return speeds;
     }

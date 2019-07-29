@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">joystick</string>
     <string name="sway">转向系数：</string>
+    <string name="baseSpeed">基础速度：</string>
 </resources>
