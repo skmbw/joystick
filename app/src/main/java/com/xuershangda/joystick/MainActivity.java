@@ -299,7 +299,8 @@ public class MainActivity extends AppCompatActivity {
 
         speeds[0] = leftWheel;
         // 右轮速度快，两个轮子的速度不同步
-        speeds[1] = BigDecimalUtils.subtract(rightWheel, 0.15);
+        speeds[1] = rightWheel;
+//        speeds[1] = BigDecimalUtils.subtract(rightWheel, 0.15);
 
         return speeds;
     }
