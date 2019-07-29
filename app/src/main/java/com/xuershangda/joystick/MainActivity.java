@@ -244,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Double[] mapSpeedMode3(double hp, double vp) {
-        double baseSpeed = 0.7D;
+        double baseSpeed = 1D;
         double x = BigDecimalUtils.round(hp, 2);
         double y = BigDecimalUtils.round(vp, 2);
 
@@ -252,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
         double leftWheel;
         double rightWheel;
 
-        if (y > 0) { // 前进
+        if (y > 0.1) { // 前进 y > 0
             if (x > 0) { // 右转，左轮速度 > 右轮速度
                 rightWheel = baseSpeed;
                 leftWheel = BigDecimalUtils.add(baseSpeed, x);
@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
                 leftWheel = baseSpeed;
                 rightWheel = baseSpeed;
             }
-        } else if (y < 0) { // 后退
+        } else if (y < -0.1) { // 后退 y < 0
             if (x > 0) { // 右转
                 rightWheel = -baseSpeed;
                 leftWheel = BigDecimalUtils.add(-baseSpeed, -x);
@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
                 leftWheel = -baseSpeed;
                 rightWheel = -baseSpeed;
             }
-        } else { // 停下
+        } else { // 停下 -0.1 <= y <= 0.1
             if (x > 0) { // 90度右转
                 leftWheel = baseSpeed;
                 rightWheel = -baseSpeed;
