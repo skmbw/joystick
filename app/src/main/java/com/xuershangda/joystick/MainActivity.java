@@ -2,11 +2,12 @@ package com.xuershangda.joystick;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -23,9 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -47,17 +46,31 @@ public class MainActivity extends AppCompatActivity {
     private BlockingDeque<Double[]> mBlockingDeque;
     private TextView mTextView;
     private TextView mBaseSpeedView;
+    private TextView mDirectView;
     private double baseSpeed = 0.6D;
+    private Button mSpeedUp;
+    private Button mSpeedDown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
+
         mOkHttpClient = new OkHttpClient();
         mBlockingDeque = new LinkedBlockingDeque<>();
         mTextView = findViewById(R.id.sway);
         mBaseSpeedView = findViewById(R.id.baseSpeed);
+        mDirectView = findViewById(R.id.direction);
+        mSpeedUp = findViewById(R.id.speedUp);
+        mSpeedDown = findViewById(R.id.speedDown);
+
+        mSpeedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
+        mSpeedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
 
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
@@ -236,40 +249,53 @@ public class MainActivity extends AppCompatActivity {
         double leftWheel;
         double rightWheel;
 
+        String direct;
+
         if (y > 0.1) { // 前进 y > 0
             if (x > 0) { // 右转，左轮速度 > 右轮速度
                 rightWheel = baseSpeed;
                 leftWheel = BigDecimalUtils.add(baseSpeed, x);
+                direct = "右转";
             } else if (x < 0) { // 左转，右轮速度 > 左轮速度
                 leftWheel = baseSpeed;
                 rightWheel = BigDecimalUtils.add(baseSpeed, Math.abs(x));
+                direct = "左转";
             } else { // 向前直行
                 leftWheel = baseSpeed;
                 rightWheel = baseSpeed;
+                direct = "前进";
             }
         } else if (y < -0.1) { // 后退 y < 0
             if (x > 0) { // 右转
                 rightWheel = -baseSpeed;
                 leftWheel = BigDecimalUtils.add(-baseSpeed, -x);
+                direct = "右后转";
             } else if (x < 0) { // 左转
                 leftWheel = -baseSpeed;
                 rightWheel = BigDecimalUtils.add(-baseSpeed, x);
+                direct = "左后转";
             } else { // 向后直行
                 leftWheel = -baseSpeed;
                 rightWheel = -baseSpeed;
+                direct = "后退";
             }
         } else { // 停下 -0.1 <= y <= 0.1
             if (x > 0) { // 90度右转
                 leftWheel = baseSpeed;
                 rightWheel = -baseSpeed;
+                direct = "90度右转";
             } else if (x < 0) { // 90度左转
                 leftWheel = -baseSpeed;
                 rightWheel = baseSpeed;
+                direct = "90度左转";
             } else { // 停止
                 leftWheel = 0;
                 rightWheel = 0;
+                direct = "停止";
             }
         }
+
+        runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
 
         speeds[0] = leftWheel;
         speeds[1] = BigDecimalUtils.subtract(rightWheel, 0.15);

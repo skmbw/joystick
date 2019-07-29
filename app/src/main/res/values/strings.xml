@@ -2,4 +2,7 @@
     <string name="app_name">joystick</string>
     <string name="sway">转向系数：</string>
     <string name="baseSpeed">基础速度：</string>
+    <string name="speedUp">加速</string>
+    <string name="speedDown">减速</string>
+    <string name="direction">方向：</string>
 </resources>
