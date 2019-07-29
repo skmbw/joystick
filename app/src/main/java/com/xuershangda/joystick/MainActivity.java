@@ -298,6 +298,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
 
         speeds[0] = leftWheel;
+        // 右轮速度快，两个轮子的速度不同步
         speeds[1] = BigDecimalUtils.subtract(rightWheel, 0.15);
 
         return speeds;
