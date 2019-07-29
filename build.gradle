@@ -1,0 +1,47 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+//        jcenter()
+        maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
+//        maven{ url 'http://mvnrepository.com/'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/jcenter'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/google'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/gradle-plugin'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/public'}
+        maven{ url 'http://maven.aliyun.com/repository/public'}
+        maven{ url 'http://maven.aliyun.com/repository/google'}
+        maven{ url 'http://maven.aliyun.com/repository/gradle-plugin'}
+        maven{ url 'http://maven.aliyun.com/repository/spring'}
+        maven{ url 'http://maven.aliyun.com/repository/jcenter'}
+        maven { url "https://jitpack.io" }
+//        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.4.1'
+        
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+//        jcenter()
+        maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/jcenter'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/google'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/gradle-plugin'}
+//        maven{ url 'http://maven.aliyun.com/nexus/content/repositories/public'}
+        maven{ url 'http://maven.aliyun.com/repository/google'}
+        maven{ url 'http://maven.aliyun.com/repository/grade-plugin'}
+        maven{ url 'http://maven.aliyun.com/repository/jcenter'}
+//        maven{ url 'http://mvnrepository.com/'}
+        maven { url "https://jitpack.io" }
+//        google()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
