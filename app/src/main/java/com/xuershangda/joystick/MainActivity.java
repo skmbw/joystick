@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.xuershangda.joystick.controller.DefaultController;
 import com.xuershangda.joystick.listener.JoystickTouchViewListener;
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private Double mLeftSpeed = 0D;
     private Double mRightSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
+    private TextView mTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
         mOkHttpClient = new OkHttpClient();
         mBlockingDeque = new LinkedBlockingDeque<>();
+        mTextView = findViewById(R.id.sway);
 
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
@@ -220,7 +223,10 @@ public class MainActivity extends AppCompatActivity {
 
                     mLeftSpeed = leftSpeed;
                     mRightSpeed = rightSpeed;
-
+                    runOnUiThread(() -> {
+                        double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
+                        mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
+                    });
                     String url = HOST + "teleop/5/" + leftSpeed + "/" + rightSpeed;
                     call(url, Collections.emptyMap(), new Callback() {
                         @Override

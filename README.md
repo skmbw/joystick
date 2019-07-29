@@ -4,3 +4,6 @@
 * 是因为在用户目录中的.gradle文件夹中的gradle.properties里面配置了代理，代理到lantern了，
 可是lantern是关闭的。去掉代理，不使用lantern。
 * 或者是项目中的gradle.properties中配置代理都要去掉
+
+# CLEARTEXT communication to 10.70.10.112 not permitted by network security policy
+* https://blog.csdn.net/qq_18620851/article/details/80617549
