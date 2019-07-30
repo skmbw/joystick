@@ -5,4 +5,5 @@
     <string name="speedUp">加速</string>
     <string name="speedDown">减速</string>
     <string name="direction">方向：</string>
+    <string name="drivingMode">行驶模式：</string>
 </resources>

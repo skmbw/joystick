@@ -53,7 +53,7 @@
         android:layout_below="@+id/baseInfo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/speedUp"
@@ -69,10 +69,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:layout_marginTop="20dp"
             android:textColor="@color/colorAccent"
             android:textSize="26sp"
             android:text="@string/speedDown"/>
+
+        <TextView
+            android:id="@+id/drivingMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:textColor="@color/colorAccent"
+            android:textSize="22sp"
+            android:text="@string/drivingMode"/>
     </LinearLayout>
 
 </RelativeLayout>

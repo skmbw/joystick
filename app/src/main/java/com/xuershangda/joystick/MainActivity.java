@@ -12,7 +12,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.xuershangda.joystick.controller.DefaultController;
-import com.xuershangda.joystick.controller.SingleController;
 import com.xuershangda.joystick.listener.JoystickTouchViewListener;
 import com.xuershangda.joystick.utils.BigDecimalUtils;
 
@@ -47,7 +46,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTextView;
     private TextView mBaseSpeedView;
     private TextView mDirectView;
-    private double baseSpeed = 0.6D;
+    private TextView mDrivingMode;
+    private double baseSpeed = 0.5D;
+    private int drivingMode = 0;
     private Button mSpeedUp;
     private Button mSpeedDown;
 
@@ -68,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
         mDirectView = findViewById(R.id.direction);
         mSpeedUp = findViewById(R.id.speedUp);
         mSpeedDown = findViewById(R.id.speedDown);
+        mDrivingMode = findViewById(R.id.drivingMode);
 
         mSpeedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
         mSpeedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
@@ -75,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
 
-        mDefaultController = new SingleController(MainActivity.this, viewGroup);
+        mDefaultController = new DefaultController(MainActivity.this, viewGroup);
         mDefaultController.createViews();
         mDefaultController.showViews(false);
 
@@ -152,7 +154,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReset() {
                 // 回到控制点，停止
-                Log.d(TAG, "onReset: left stop.");
+                Log.d(TAG, "onReset: left, driving mode = 0.");
+                drivingMode = 0;
 //                Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
 //                mBlockingDeque.clear();
 //
@@ -200,14 +203,37 @@ public class MainActivity extends AppCompatActivity {
                     Double leftSpeed = speeds[0];
                     Double rightSpeed = speeds[1];
                     Log.d(TAG, "onTouch: leftWheel=" + leftSpeed + ", rightWheel=" + rightSpeed);
-
+                    double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
+                    String driving;
+                    if (drivingMode == 1) {
+                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
+                        driving = "直行";
+                        if (leftSpeed >= 0 && rightSpeed >= 0) {
+                            rightSpeed = Math.max(leftSpeed, rightSpeed);
+                            leftSpeed = rightSpeed;
+                        }
+                    } else if (drivingMode == 2) {
+                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
+                        driving = "后退";
+                        if (leftSpeed <= 0 && rightSpeed <= 0) {
+                            rightSpeed = Math.min(leftSpeed, rightSpeed);
+                            leftSpeed = rightSpeed;
+                        }
+                    } else {
+                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
+                        driving = "速控";
+                    }
+                    String dm = driving;
+                    // 记录上一次的速度
                     mLeftSpeed = leftSpeed;
                     mRightSpeed = rightSpeed;
                     runOnUiThread(() -> {
-                        double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
+//                        double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
 
                         mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
                         mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
+
+                        mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), dm));
                     });
                     String url = HOST + "teleop/5/" + leftSpeed + "/" + rightSpeed;
                     call(url, Collections.emptyMap(), new Callback() {
@@ -233,11 +259,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void speedUp(double hp, double vp) {
         double y = BigDecimalUtils.round(vp, 2);
+//        double x = BigDecimalUtils.round(hp, 2);
 
         if (y > 0) {
-            baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1);
+            drivingMode = 1;
         } else {
-            baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1);
+            drivingMode = 2;
         }
     }
 
@@ -251,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
 
         String direct;
 
-        if (y > 0.1) { // 前进 y > 0
+        if (y > 0) { // 前进 y > 0; y > 0.1
             if (x > 0) { // 右转，左轮速度 > 右轮速度
                 rightWheel = baseSpeed;
                 leftWheel = BigDecimalUtils.add(baseSpeed, x);
@@ -265,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
                 rightWheel = baseSpeed;
                 direct = "前进";
             }
-        } else if (y < -0.1) { // 后退 y < 0
+        } else if (y < 0) { // 后退 y < 0
             if (x > 0) { // 右转
                 rightWheel = -baseSpeed;
                 leftWheel = BigDecimalUtils.add(-baseSpeed, -x);
@@ -279,21 +306,26 @@ public class MainActivity extends AppCompatActivity {
                 rightWheel = -baseSpeed;
                 direct = "后退";
             }
-        } else { // 停下 -0.1 <= y <= 0.1
-            if (x > 0) { // 90度右转
-                leftWheel = baseSpeed;
-                rightWheel = -baseSpeed;
-                direct = "90度右转";
-            } else if (x < 0) { // 90度左转
-                leftWheel = -baseSpeed;
-                rightWheel = baseSpeed;
-                direct = "90度左转";
-            } else { // 停止
-                leftWheel = 0;
-                rightWheel = 0;
-                direct = "停止";
-            }
+        } else {
+            leftWheel = 0;
+            rightWheel = 0;
+            direct = "停止";
         }
+//        else { // 停下 -0.1 <= y <= 0.1
+//            if (x > 0) { // 90度右转
+//                leftWheel = baseSpeed;
+//                rightWheel = -baseSpeed;
+//                direct = "90度右转";
+//            } else if (x < 0) { // 90度左转
+//                leftWheel = -baseSpeed;
+//                rightWheel = baseSpeed;
+//                direct = "90度左转";
+//            } else { // 停止
+//                leftWheel = 0;
+//                rightWheel = 0;
+//                direct = "停止";
+//            }
+//        }
 
         runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
 
