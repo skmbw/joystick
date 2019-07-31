@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView mDirectView;
     private TextView mDrivingMode;
     private double baseSpeed = 0.5D;
-    private int drivingMode = 0;
+    private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private Button mSpeedUp;
     private Button mSpeedDown;
 
@@ -155,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
             public void onReset() {
                 // 回到控制点，停止
                 Log.d(TAG, "onReset: left, driving mode = 0.");
-                drivingMode = 0;
+                drivingMode.set(0);
 //                Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
 //                mBlockingDeque.clear();
 //
@@ -205,14 +206,14 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "onTouch: leftWheel=" + leftSpeed + ", rightWheel=" + rightSpeed);
                     double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
                     String driving;
-                    if (drivingMode == 1) {
+                    if (drivingMode.compareAndSet(1, 1)) {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
                         driving = "直行";
                         if (leftSpeed >= 0 && rightSpeed >= 0) {
                             rightSpeed = Math.max(leftSpeed, rightSpeed);
                             leftSpeed = rightSpeed;
                         }
-                    } else if (drivingMode == 2) {
+                    } else if (drivingMode.compareAndSet(2, 2)) {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
                         driving = "后退";
                         if (leftSpeed <= 0 && rightSpeed <= 0) {
@@ -262,9 +263,9 @@ public class MainActivity extends AppCompatActivity {
 //        double x = BigDecimalUtils.round(hp, 2);
 
         if (y > 0) {
-            drivingMode = 1;
+            drivingMode.set(1);
         } else {
-            drivingMode = 2;
+            drivingMode.set(2);
         }
     }
 
