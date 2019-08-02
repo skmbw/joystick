@@ -38,7 +38,6 @@ import okhttp3.ResponseBody;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private DefaultController mDefaultController;
     private static final String HOST = "http://10.70.10.112:8000/";
     private OkHttpClient mOkHttpClient;
     private Double mLeftSpeed = 0D;
@@ -50,8 +49,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView mDrivingMode;
     private double baseSpeed = 0.5D;
     private volatile AtomicInteger drivingMode = new AtomicInteger(0);
-    private Button mSpeedUp;
-    private Button mSpeedDown;
+    private TextView mLeftWheel;
+    private TextView mRightWheel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,21 +67,23 @@ public class MainActivity extends AppCompatActivity {
         mTextView = findViewById(R.id.sway);
         mBaseSpeedView = findViewById(R.id.baseSpeed);
         mDirectView = findViewById(R.id.direction);
-        mSpeedUp = findViewById(R.id.speedUp);
-        mSpeedDown = findViewById(R.id.speedDown);
+        Button speedUp = findViewById(R.id.speedUp);
+        Button speedDown = findViewById(R.id.speedDown);
         mDrivingMode = findViewById(R.id.drivingMode);
+        mLeftWheel = findViewById(R.id.leftWheel);
+        mRightWheel = findViewById(R.id.rightWheel);
 
-        mSpeedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
-        mSpeedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
+        speedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
+        speedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
 
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
 
-        mDefaultController = new DefaultController(MainActivity.this, viewGroup);
-        mDefaultController.createViews();
-        mDefaultController.showViews(false);
+        DefaultController defaultController = new DefaultController(MainActivity.this, viewGroup);
+        defaultController.createViews();
+        defaultController.showViews(false);
 
-        mDefaultController.setRightTouchViewListener(new JoystickTouchViewListener() {
+        defaultController.setRightTouchViewListener(new JoystickTouchViewListener() {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
                 Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
@@ -90,8 +91,8 @@ public class MainActivity extends AppCompatActivity {
                 Double leftSpeed = speeds[0];
                 Double rightSpeed = speeds[1];
 
-                if (Math.abs(BigDecimalUtils.subtract(leftSpeed, mLeftSpeed)) <= 0.01
-                        && Math.abs(BigDecimalUtils.subtract(rightSpeed, mRightSpeed)) <= 0.01) {
+                if (Math.abs(BigDecimalUtils.subtract(leftSpeed, mLeftSpeed)) <= 0.02
+                        && Math.abs(BigDecimalUtils.subtract(rightSpeed, mRightSpeed)) <= 0.02) {
                     Log.d(TAG, "onTouch: 速度变化太小，忽略。mLeftSpeed=" + mLeftSpeed + ", mRightSpeed="
                             + mRightSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
                     return;
@@ -145,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mDefaultController.setLeftTouchViewListener(new JoystickTouchViewListener() {
+        defaultController.setLeftTouchViewListener(new JoystickTouchViewListener() {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
                 Log.d(TAG, "onTouch left: " + horizontalPercent + ", " + verticalPercent);
@@ -208,33 +209,32 @@ public class MainActivity extends AppCompatActivity {
                     String driving;
                     if (drivingMode.compareAndSet(1, 1)) {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        driving = "直行";
+                        driving = "锁定直行";
                         if (leftSpeed >= 0 && rightSpeed >= 0) {
                             rightSpeed = Math.max(leftSpeed, rightSpeed);
                             leftSpeed = rightSpeed;
                         }
                     } else if (drivingMode.compareAndSet(2, 2)) {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        driving = "后退";
+                        driving = "锁定后退";
                         if (leftSpeed <= 0 && rightSpeed <= 0) {
                             rightSpeed = Math.min(leftSpeed, rightSpeed);
                             leftSpeed = rightSpeed;
                         }
                     } else {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        driving = "速控";
+                        driving = "速度控制";
                     }
                     String dm = driving;
                     // 记录上一次的速度
                     mLeftSpeed = leftSpeed;
                     mRightSpeed = rightSpeed;
                     runOnUiThread(() -> {
-//                        double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
-
                         mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
                         mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
-
                         mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), dm));
+                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mLeftSpeed));
+                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mRightSpeed));
                     });
                     String url = HOST + "teleop/5/" + leftSpeed + "/" + rightSpeed;
                     call(url, Collections.emptyMap(), new Callback() {
