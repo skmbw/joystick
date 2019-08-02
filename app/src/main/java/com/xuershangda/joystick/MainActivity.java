@@ -206,24 +206,34 @@ public class MainActivity extends AppCompatActivity {
                     Double rightSpeed = speeds[1];
                     Log.d(TAG, "onTouch: leftWheel=" + leftSpeed + ", rightWheel=" + rightSpeed);
                     double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
-                    String driving;
+                    String driving = "手动控制";
                     if (drivingMode.compareAndSet(1, 1)) {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        driving = "锁定直行";
                         if (leftSpeed >= 0 && rightSpeed >= 0) {
+                            driving = "锁定直行";
                             rightSpeed = Math.max(leftSpeed, rightSpeed);
+                            leftSpeed = rightSpeed;
+                        } else if (leftSpeed <= 0 && rightSpeed <= 0) {
+                            driving = "锁定后退";
+                            rightSpeed = Math.min(leftSpeed, rightSpeed);
                             leftSpeed = rightSpeed;
                         }
                     } else if (drivingMode.compareAndSet(2, 2)) {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        driving = "锁定后退";
                         if (leftSpeed <= 0 && rightSpeed <= 0) {
+                            driving = "锁定后退";
                             rightSpeed = Math.min(leftSpeed, rightSpeed);
                             leftSpeed = rightSpeed;
+                        } else {
+                            if (leftSpeed >= 0 && rightSpeed >= 0) {
+                                driving = "锁定直行";
+                                rightSpeed = Math.max(leftSpeed, rightSpeed);
+                                leftSpeed = rightSpeed;
+                            }
                         }
                     } else {
                         Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        driving = "速度控制";
+                        driving = "手动控制";
                     }
                     String dm = driving;
                     // 记录上一次的速度
