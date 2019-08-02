@@ -133,6 +133,13 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+                runOnUiThread(() -> {
+                    mTextView.setText(String.format("%s%s", getString(R.string.sway), 0));
+                    mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
+                    mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), "手动控制"));
+                    mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), 0));
+                    mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), 0));
+                });
             }
 
             @Override

@@ -6,6 +6,6 @@
     <string name="speedDown">减速</string>
     <string name="direction">行驶方向：</string>
     <string name="drivingMode">速度模式：</string>
-    <string name="leftWheel">左轮速：</string>
-    <string name="rightWheel">右轮速：</string>
+    <string name="leftWheel">左轮：</string>
+    <string name="rightWheel">右轮：</string>
 </resources>
