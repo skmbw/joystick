@@ -1,12 +1,11 @@
 package com.xuershangda.joystick;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -19,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private TextView mLeftWheel;
     private TextView mRightWheel;
+    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
 
         speedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
         speedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
+
+        mHandler = new UpdateViewHandler(this);
 
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
@@ -118,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
                 mBlockingDeque.clear();
 
+                Message msg = mHandler.obtainMessage(1);
+                mHandler.sendMessage(msg); // msg.sendToTarget(); 等效的，看源码
+
                 String url = HOST + "teleop/0";
                 call(url, Collections.emptyMap(), new Callback() {
                     @Override
@@ -132,14 +138,6 @@ public class MainActivity extends AppCompatActivity {
                             Log.i(TAG, "reset onResponse: " + body.string());
                         }
                     }
-                });
-                runOnUiThread(() -> {
-                    mTextView.setText(String.format("%s%s", getString(R.string.sway), 0));
-                    mDirectView.setText(String.format("%s%s", getString(R.string.direction), "停止"));
-                    mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
-                    mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), "手动控制"));
-                    mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), 0));
-                    mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), 0));
                 });
             }
 
@@ -164,7 +162,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReset() {
                 // 回到控制点，停止
-                Log.d(TAG, "onReset: left, driving mode = 0.");
+                Log.d(TAG, "onReset: left, driving mode = " + drivingMode.toString());
+                // 重置显示信息
                 drivingMode.set(0);
 //                Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
 //                mBlockingDeque.clear();
@@ -278,7 +277,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void speedUp(double hp, double vp) {
         double y = BigDecimalUtils.round(vp, 2);
-//        double x = BigDecimalUtils.round(hp, 2);
 
         if (y > 0) {
             drivingMode.set(1);
@@ -351,182 +349,8 @@ public class MainActivity extends AppCompatActivity {
         speeds[0] = leftWheel;
         // 右轮速度快，两个轮子的速度不同步
         speeds[1] = rightWheel;
-//        speeds[1] = BigDecimalUtils.subtract(rightWheel, 0.15);
 
         return speeds;
-    }
-
-    /**
-     * 因为jetbot没有转向系统，所以转向需要通过速度来映射。
-     * 不同的角度映射到左右轮子不同的速度上。
-     *
-     * @param hp X轴角度百分比
-     * @param vp Y轴角度百分比
-     */
-    private Double[] mapSpeed(double hp, double vp) {
-        // 进行四舍五入
-        hp = BigDecimalUtils.round(hp, 2);
-        vp = BigDecimalUtils.round(vp, 2);
-
-        Double[] speeds = new Double[2];
-
-        if (hp > 0 && vp > 0) { // 第一象限，右转
-            if (hp <= vp) {
-                double diff = BigDecimalUtils.subtract(vp, hp);
-                speeds[0] = BigDecimalUtils.add(hp, diff);
-                speeds[1] = diff;
-            } else {
-                double diff = BigDecimalUtils.subtract(hp, vp);
-                speeds[0] = BigDecimalUtils.add(vp, diff);
-                speeds[1] = diff;
-            }
-            Log.d(TAG, "mapSpeed: 右转");
-        } else if (hp == 0 && vp > 0) { // 正Y轴，向前直行
-            speeds[0] = vp;
-            speeds[1] = vp;
-            Log.d(TAG, "mapSpeed: 向前直行");
-        } else if (hp < 0 && vp > 0) { // 第二象限，左转
-            double absHp = Math.abs(hp);
-            if (absHp <= vp) {
-                double diff = BigDecimalUtils.subtract(vp, absHp);
-                speeds[0] = diff;
-                speeds[1] = BigDecimalUtils.add(absHp, diff);
-            } else {
-                double diff = BigDecimalUtils.subtract(absHp, vp);
-                speeds[0] = diff;
-                speeds[1] = BigDecimalUtils.add(vp, diff);
-            }
-            Log.d(TAG, "mapSpeed: 左转");
-        } else if (hp < 0 && vp == 0) { // 负X轴，向左直行
-            speeds[0] = -hp;
-            speeds[1] = -hp;
-            Log.d(TAG, "mapSpeed: 向左直行");
-        } else if (hp < 0 && vp < 0) { // 第三象限
-            if (hp >= vp) {
-                double diff = BigDecimalUtils.subtract(hp, vp); // >= 0
-                speeds[0] = BigDecimalUtils.add(-hp, diff);
-                speeds[1] = diff;
-            } else {
-                double diff = BigDecimalUtils.subtract(vp, hp); // > 0
-                speeds[0] = BigDecimalUtils.add(-vp, diff);
-                speeds[1] = diff;
-            }
-            Log.d(TAG, "mapSpeed: 左后转");
-        } else if (hp == 0 && vp < 0) { // 负Y轴，向后倒退
-            speeds[0] = vp;
-            speeds[1] = vp;
-            Log.d(TAG, "mapSpeed: 向后倒退");
-        } else if (hp > 0 && vp < 0) { // 第四象限
-            double absVp = Math.abs(vp);
-            if (hp >= absVp) {
-                double diff = BigDecimalUtils.subtract(hp, absVp);
-                speeds[0] = BigDecimalUtils.add(absVp, diff);
-                speeds[1] = diff;
-            } else {
-                double diff = BigDecimalUtils.subtract(absVp, hp);
-                speeds[0] = BigDecimalUtils.add(hp, diff);
-                speeds[1] = diff;
-            }
-            Log.d(TAG, "mapSpeed: 右后转");
-        } else if (hp > 0 && vp == 0) { // 正X轴，向右直行
-            speeds[0] = hp;
-            speeds[1] = hp;
-            Log.d(TAG, "mapSpeed: 向右直行");
-        }
-        return speeds;
-    }
-
-    /**
-     * 因为jetbot没有转向系统，所以转向需要通过速度来映射。
-     * 不同的角度映射到左右轮子不同的速度上。上下是前进后退，左右数值的大小，代表转弯的角度。
-     *
-     * @param hp X轴角度百分比
-     * @param vp Y轴角度百分比
-     */
-    private Double[] mapSpeedMode2(double hp, double vp) {
-        double x = BigDecimalUtils.round(hp, 2);
-        double y = BigDecimalUtils.round(vp, 2);
-
-        Double[] speeds = new Double[2];
-        double leftWheel;
-        double rightWheel;
-
-        if (y > 0) { // 前进
-            if (x > 0) { // 右转，左轮速度 > 右轮速度
-                if (y >= x) {
-                    leftWheel = y;
-                    rightWheel = x;
-                } else {
-                    leftWheel = x;
-                    rightWheel = y;
-                }
-            } else if (x < 0) { // 左转，右轮速度 > 左轮速度
-                double absX = Math.abs(x);
-                if (y >= absX) {
-                    leftWheel = absX;
-                    rightWheel = y;
-                } else {
-                    leftWheel = y;
-                    rightWheel = absX;
-                }
-            } else { // 向前直行
-                leftWheel = y;
-                rightWheel = y;
-            }
-            // 速度太小，有时候轮子不转
-//            if (leftWheel < 0.5 || rightWheel < 0.5) {
-//                leftWheel = BigDecimalUtils.add(leftWheel, 0.5);
-//                rightWheel = BigDecimalUtils.add(rightWheel, 0.5);
-//            }
-        } else if (y < 0) { // 后退
-            double absY = Math.abs(y);
-            if (x > 0) { // 右转
-                if (absY >= x) {
-                    leftWheel = y;
-                    rightWheel = -x;
-                } else {
-                    leftWheel = -x;
-                    rightWheel = y;
-                }
-            } else if (x < 0) { // 左转
-                double absX = Math.abs(x);
-                if (absY >= absX) {
-                    leftWheel = x;
-                    rightWheel = y;
-                } else {
-                    leftWheel = y;
-                    rightWheel = x;
-                }
-            } else { // 向后直行
-                leftWheel = y;
-                rightWheel = y;
-            }
-//            if (leftWheel > -0.5 || rightWheel > -0.5) {
-//                leftWheel = BigDecimalUtils.add(leftWheel, -0.5);
-//                rightWheel = BigDecimalUtils.add(rightWheel, -0.5);
-//            }
-        } else { // 停下
-            if (x > 0) { // 90度右转
-                leftWheel = 1;
-                rightWheel = -1;
-            } else if (x < 0) { // 90度左转
-                leftWheel = -1;
-                rightWheel = 1;
-            } else { // 停止
-                leftWheel = 0;
-                rightWheel = 0;
-            }
-        }
-
-        speeds[0] = leftWheel;
-        speeds[1] = rightWheel;
-
-        return speeds;
-    }
-
-    private static View getRootView(Context context) {
-        Activity activity = (Activity) context;
-        return activity.getWindow().getDecorView().findViewById(android.R.id.content);
     }
 
     /**
@@ -572,5 +396,28 @@ public class MainActivity extends AppCompatActivity {
 
         Call call = okHttpClient.newCall(request);
         call.enqueue(callback);
+    }
+
+    private static class UpdateViewHandler extends Handler {
+
+        private WeakReference<MainActivity> mReference;
+
+        UpdateViewHandler(MainActivity activity) {
+            this.mReference = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 1:
+                    MainActivity activity = mReference.get();
+                    activity.mTextView.setText(String.format("%s%s", activity.getString(R.string.sway), 0));
+                    activity.mDirectView.setText(String.format("%s%s", activity.getString(R.string.direction), "停止"));
+                    activity.mBaseSpeedView.setText(String.format("%s%s", activity.getString(R.string.baseSpeed), activity.baseSpeed));
+                    activity.mDrivingMode.setText(String.format("%s%s", activity.getString(R.string.drivingMode), "手动控制"));
+                    activity.mLeftWheel.setText(String.format("%s%s", activity.getString(R.string.leftWheel), 0));
+                    activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
+            }
+        }
     }
 }
