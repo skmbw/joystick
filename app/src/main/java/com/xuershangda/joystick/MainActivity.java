@@ -245,13 +245,13 @@ public class MainActivity extends AppCompatActivity {
                     } catch (InterruptedException e) {
                         Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
                     }
-                    // 已选择键集
+                    // 获取当前事件集
                     Set<SelectionKey> keys = mSelector.selectedKeys();
                     Iterator<SelectionKey> iterator = keys.iterator();
                     // 处理准备就绪的事件
                     while (iterator.hasNext()) {
                         SelectionKey key = iterator.next();
-                        // 删除当前键，避免重复消费
+                        // 删除当前键，避免重复消费，in fact不会重复的
                         iterator.remove();
                         // 连接
                         if (key.isConnectable()) {
