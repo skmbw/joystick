@@ -52,7 +52,7 @@ import okhttp3.ResponseBody;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private static final String HOST = "http://10.70.10.112:8000/";
+    private static final String HOST = "http://10.1.163.96:9090/";
     private OkHttpClient mOkHttpClient;
     private Double mLeftSpeed = 0D;
     private Double mRightSpeed = 0D;
@@ -66,6 +66,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView mLeftWheel;
     private TextView mRightWheel;
     private Handler mHandler;
+
+    private SocketChannel mSocketChannel;
+    private Selector mSelector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -214,29 +217,29 @@ public class MainActivity extends AppCompatActivity {
         thread.start();
     }
 
-    public void rosBridgeTcpTest() throws IOException {
+    public void startRosService() throws IOException {
         try {
             // 初始化客户端
-            SocketChannel socket = SocketChannel.open();
-            socket.configureBlocking(false);
-            Selector selector = Selector.open();
+            mSocketChannel = SocketChannel.open();
+            mSocketChannel.configureBlocking(false);
+            mSelector = Selector.open();
             // 注册连接事件
-            socket.register(selector, SelectionKey.OP_CONNECT);
+            mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
             // 发起连接
-            socket.connect(new InetSocketAddress("localhost", 9090));
-            boolean advertised = false;
+            mSocketChannel.connect(new InetSocketAddress("localhost", 9090));
             // 轮询处理
             while (true) {
-                if (socket.isOpen()) {
+                if (mSocketChannel.isOpen()) {
                     // 在注册的键中选择已准备就绪的事件
-                    selector.select();
+                    mSelector.select();
                     try {
-                        TimeUnit.MILLISECONDS.sleep(500);
+                        // 控制发送的节奏
+                        TimeUnit.MILLISECONDS.sleep(100);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
                     }
                     // 已选择键集
-                    Set<SelectionKey> keys = selector.selectedKeys();
+                    Set<SelectionKey> keys = mSelector.selectedKeys();
                     Iterator<SelectionKey> iterator = keys.iterator();
                     // 处理准备就绪的事件
                     while (iterator.hasNext()) {
@@ -246,67 +249,65 @@ public class MainActivity extends AppCompatActivity {
                         // 连接
                         if (key.isConnectable()) {
                             // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
-                            while (!socket.finishConnect()) {
+                            while (!mSocketChannel.finishConnect()) {
                                 System.out.println("连接中");
                             }
                             // 连接成功，注册写事件
-                            socket.register(selector, SelectionKey.OP_WRITE);
-
+                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                         }
 
                         if (key.isWritable()) { // 通道可写入数据了
-//                            Message message = new Message("{\"data\": \"test tcp hello world yinlei."
-//                                    + DateUtils.toDateString(DateUtils.YMDHMS) + "\"}");
+                            mSocketChannel.write((ByteBuffer) key.attachment());
 
-                            Vector3 angular = new Vector3(0, 0, 0);
-                            Vector3 linear = new Vector3(1, 0, 0);
-                            Twist twist = new Twist(linear, angular);
-                            twist.setMessageType(Twist.TYPE);
-
-                            // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
-                            String publishId = "publish_chatter_" + System.currentTimeMillis();
-                            JsonObject call = Json.createObjectBuilder()
-                                    .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
-                                    .add(JRosbridge.FIELD_ID, publishId)
-                                    .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
-                                    .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
-
-                            byte[] messageBytes = call.toString().getBytes();
-                            int contentLength = messageBytes.length;
-                            StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
-                            int strLen = headerLengthString.length();
-                            // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
-                            if (strLen < 10) {
-                                for (int i = strLen; i < 10; i++) {
-                                    headerLengthString.append("_");
-                                }
-                            }
-
-                            byte[] headerBytes = headerLengthString.toString().getBytes();
-                            byte[] contentBytes = new byte[contentLength + 10];
-                            System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
-                            System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
-
-                            ByteBuffer byteBuffer = ByteBuffer.wrap(contentBytes);
-                            socket.write(byteBuffer);
-                            socket.register(selector, SelectionKey.OP_WRITE);
+//                            Vector3 angular = new Vector3(0, 0, 0);
+//                            Vector3 linear = new Vector3(1, 0, 0);
+//                            Twist twist = new Twist(linear, angular);
+//                            twist.setMessageType(Twist.TYPE);
+//
+//                            // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
+//                            // System.currentTimeMillis()精度可能不够，但是现在没有使用这个字段
+//                            String publishId = "publish_chatter_" + System.currentTimeMillis();
+//                            JsonObject call = Json.createObjectBuilder()
+//                                    .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
+//                                    .add(JRosbridge.FIELD_ID, publishId)
+//                                    .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
+//                                    .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
+//
+//                            byte[] messageBytes = call.toString().getBytes();
+//                            int contentLength = messageBytes.length;
+//                            StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
+//                            int strLen = headerLengthString.length();
+//                            // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
+//                            if (strLen < 10) {
+//                                for (int i = strLen; i < 10; i++) {
+//                                    headerLengthString.append("_");
+//                                }
+//                            }
+//
+//                            byte[] headerBytes = headerLengthString.toString().getBytes();
+//                            byte[] contentBytes = new byte[contentLength + 10];
+//                            System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
+//                            System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
+//
+//                            ByteBuffer byteBuffer = ByteBuffer.wrap(contentBytes);
+//                            mSocketChannel.write(byteBuffer);
+//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                         }
-                        // 处理输入事件，服务端的返回数据，事实上，不需要处理
+                        // 处理输入事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
                         if (key.isReadable()) {
-                            ByteBuffer byteBuffer = ByteBuffer.allocate(1024 * 4);
-                            int len = 0;
-                            // 捕获异常，因为在服务端关闭后会发送FIN报文，会触发read事件，但连接已关闭,此时read()会产生异常
-                            try {
-
-                                if ((len = socket.read(byteBuffer)) > 0) {
-                                    System.out.println("接收到來自服务器的消息\t");
-                                    System.out.println(new String(byteBuffer.array(), 0, len));
-                                }
-                            } catch (IOException e) {
-                                System.out.println("服务器异常，请联系客服人员!正在关闭客户端.........");
-                                key.cancel();
-                                socket.close();
-                            }
+//                            ByteBuffer byteBuffer = ByteBuffer.allocate(1024 * 4);
+//                            int len = 0;
+//                            // 捕获异常，因为在服务端关闭后会发送FIN报文，会触发read事件，但连接已关闭,此时read()会产生异常
+//                            try {
+//                                if ((len = mSocketChannel.read(byteBuffer)) > 0) {
+//                                    System.out.println("接收到來自服务器的消息\t");
+//                                    System.out.println(new String(byteBuffer.array(), 0, len));
+//                                }
+//                            } catch (IOException e) {
+//                                System.out.println("服务器异常，请联系客服人员!正在关闭客户端.........");
+//                                key.cancel();
+//                                mSocketChannel.close();
+//                            }
                         }
                     }
                 } else {
@@ -315,8 +316,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         } catch (IOException e) {
-            System.out.println("客户端异常，请重启！");
-            e.printStackTrace();
+            Log.e(TAG, "server error. " + e.getMessage());
         }
     }
 
@@ -373,21 +373,55 @@ public class MainActivity extends AppCompatActivity {
                         mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mLeftSpeed));
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mRightSpeed));
                     });
-                    String url = HOST + "teleop/5/" + leftSpeed + "/" + rightSpeed;
-                    call(url, Collections.emptyMap(), new Callback() {
-                        @Override
-                        public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                            Log.e(TAG, "onFailure: ", e);
-                        }
+//                    String url = HOST + "teleop/5/" + leftSpeed + "/" + rightSpeed;
+//                    call(url, Collections.emptyMap(), new Callback() {
+//                        @Override
+//                        public void onFailure(@NotNull Call call, @NotNull IOException e) {
+//                            Log.e(TAG, "onFailure: ", e);
+//                        }
+//
+//                        @Override
+//                        public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+//                            ResponseBody body = response.body();
+//                            if (body != null) {
+//                                Log.i(TAG, "onResponse: " + body.string());
+//                            }
+//                        }
+//                    });
 
-                        @Override
-                        public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                            ResponseBody body = response.body();
-                            if (body != null) {
-                                Log.i(TAG, "onResponse: " + body.string());
-                            }
+                    Vector3 angular = new Vector3(0, 0, 0);
+                    Vector3 linear = new Vector3(1, 0, 0);
+                    Twist twist = new Twist(linear, angular);
+                    twist.setMessageType(Twist.TYPE);
+
+                    // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
+                    // System.currentTimeMillis()精度可能不够，但是现在没有使用这个字段
+                    String publishId = "publish_chatter_" + System.currentTimeMillis();
+                    JsonObject call = Json.createObjectBuilder()
+                            .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
+                            .add(JRosbridge.FIELD_ID, publishId)
+                            .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
+                            .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
+
+                    byte[] messageBytes = call.toString().getBytes();
+                    int contentLength = messageBytes.length;
+                    StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
+                    int strLen = headerLengthString.length();
+                    // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
+                    if (strLen < 10) {
+                        for (int i = strLen; i < 10; i++) {
+                            headerLengthString.append("_");
                         }
-                    });
+                    }
+
+                    byte[] headerBytes = headerLengthString.toString().getBytes();
+                    byte[] contentBytes = new byte[contentLength + 10];
+                    System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
+                    System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
+
+                    ByteBuffer byteBuffer = ByteBuffer.wrap(contentBytes);
+
+                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "run: Action 阻塞队列出错。", e);
