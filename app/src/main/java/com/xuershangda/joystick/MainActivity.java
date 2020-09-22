@@ -14,17 +14,15 @@ import com.xuershangda.joystick.controller.DefaultController;
 import com.xuershangda.joystick.listener.JoystickTouchViewListener;
 import com.xuershangda.joystick.utils.BigDecimalUtils;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +45,6 @@ import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -136,26 +132,19 @@ public class MainActivity extends AppCompatActivity {
                 // 回到控制点，停止
                 Log.d(TAG, "onReset: right. stop.");
                 Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
-                mBlockingDeque.clear();
+                mBlockingDeque.clear(); // 清空队列中的指令，没有发送完全的都不需要了
 
                 Message msg = mHandler.obtainMessage(1);
-                mHandler.sendMessage(msg); // msg.sendToTarget(); 等效的，看源码
+                mHandler.sendMessage(msg);
 
-                String url = HOST + "teleop/0";
-                call(url, Collections.emptyMap(), new Callback() {
-                    @Override
-                    public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                        Log.e(TAG, "reset onFailure: ", e);
-                    }
+                // 发送最后一个指令，停止运动
+                ByteBuffer byteBuffer = createMessageContent(0);
 
-                    @Override
-                    public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                        ResponseBody body = response.body();
-                        if (body != null) {
-                            Log.i(TAG, "reset onResponse: " + body.string());
-                        }
-                    }
-                });
+                try {
+                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+                } catch (ClosedChannelException e) {
+                    Log.e(TAG, "onReset: mSocketChannel 已关闭.", e);
+                }
             }
 
             @Override
@@ -182,24 +171,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onReset: left, driving mode = " + drivingMode.toString());
                 // 重置显示信息
                 drivingMode.set(0);
-//                Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
-//                mBlockingDeque.clear();
-//
-//                String url = HOST + "teleop/0";
-//                call(url, Collections.emptyMap(), new Callback() {
-//                    @Override
-//                    public void onFailure(@NotNull Call call, @NotNull IOException e) {
-//                        Log.e(TAG, "reset onFailure: ", e);
-//                    }
-//
-//                    @Override
-//                    public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-//                        ResponseBody body = response.body();
-//                        if (body != null) {
-//                            Log.i(TAG, "reset onResponse: " + body.string());
-//                        }
-//                    }
-//                });
             }
 
             @Override
@@ -215,6 +186,41 @@ public class MainActivity extends AppCompatActivity {
 
         Thread thread = new Action();
         thread.start();
+    }
+
+    public ByteBuffer createMessageContent(int speed) {
+        // 发送最后一个指令，停止运动
+        Vector3 angular = new Vector3(0, 0, 0);
+        Vector3 linear = new Vector3(speed, 0, 0);
+        Twist twist = new Twist(linear, angular);
+        twist.setMessageType(Twist.TYPE);
+
+        // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
+        // System.currentTimeMillis()精度可能不够，但是现在没有使用这个字段
+        String publishId = "publish_chatter_" + System.currentTimeMillis();
+        JsonObject call = Json.createObjectBuilder()
+                .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
+                .add(JRosbridge.FIELD_ID, publishId)
+                .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
+                .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
+
+        byte[] messageBytes = call.toString().getBytes();
+        int contentLength = messageBytes.length;
+        StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
+        int strLen = headerLengthString.length();
+        // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
+        if (strLen < 10) {
+            for (int i = strLen; i < 10; i++) {
+                headerLengthString.append("_");
+            }
+        }
+
+        byte[] headerBytes = headerLengthString.toString().getBytes();
+        byte[] contentBytes = new byte[contentLength + 10];
+        System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
+        System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
+
+        return ByteBuffer.wrap(contentBytes);
     }
 
     public void startRosService() throws IOException {
@@ -389,37 +395,37 @@ public class MainActivity extends AppCompatActivity {
 //                        }
 //                    });
 
-                    Vector3 angular = new Vector3(0, 0, 0);
-                    Vector3 linear = new Vector3(1, 0, 0);
-                    Twist twist = new Twist(linear, angular);
-                    twist.setMessageType(Twist.TYPE);
+//                    Vector3 angular = new Vector3(0, 0, 0);
+//                    Vector3 linear = new Vector3(1, 0, 0);
+//                    Twist twist = new Twist(linear, angular);
+//                    twist.setMessageType(Twist.TYPE);
+//
+//                    // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
+//                    // System.currentTimeMillis()精度可能不够，但是现在没有使用这个字段
+//                    String publishId = "publish_chatter_" + System.currentTimeMillis();
+//                    JsonObject call = Json.createObjectBuilder()
+//                            .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
+//                            .add(JRosbridge.FIELD_ID, publishId)
+//                            .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
+//                            .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
+//
+//                    byte[] messageBytes = call.toString().getBytes();
+//                    int contentLength = messageBytes.length;
+//                    StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
+//                    int strLen = headerLengthString.length();
+//                    // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
+//                    if (strLen < 10) {
+//                        for (int i = strLen; i < 10; i++) {
+//                            headerLengthString.append("_");
+//                        }
+//                    }
+//
+//                    byte[] headerBytes = headerLengthString.toString().getBytes();
+//                    byte[] contentBytes = new byte[contentLength + 10];
+//                    System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
+//                    System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
 
-                    // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
-                    // System.currentTimeMillis()精度可能不够，但是现在没有使用这个字段
-                    String publishId = "publish_chatter_" + System.currentTimeMillis();
-                    JsonObject call = Json.createObjectBuilder()
-                            .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
-                            .add(JRosbridge.FIELD_ID, publishId)
-                            .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
-                            .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
-
-                    byte[] messageBytes = call.toString().getBytes();
-                    int contentLength = messageBytes.length;
-                    StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
-                    int strLen = headerLengthString.length();
-                    // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
-                    if (strLen < 10) {
-                        for (int i = strLen; i < 10; i++) {
-                            headerLengthString.append("_");
-                        }
-                    }
-
-                    byte[] headerBytes = headerLengthString.toString().getBytes();
-                    byte[] contentBytes = new byte[contentLength + 10];
-                    System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
-                    System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
-
-                    ByteBuffer byteBuffer = ByteBuffer.wrap(contentBytes);
+                    ByteBuffer byteBuffer = createMessageContent(1);
 
                     mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
                 }
