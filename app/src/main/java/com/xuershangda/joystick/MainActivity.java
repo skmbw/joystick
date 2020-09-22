@@ -264,56 +264,10 @@ public class MainActivity extends AppCompatActivity {
 
                         if (key.isWritable()) { // 通道可写入数据了
                             mSocketChannel.write((ByteBuffer) key.attachment());
-
-//                            Vector3 angular = new Vector3(0, 0, 0);
-//                            Vector3 linear = new Vector3(1, 0, 0);
-//                            Twist twist = new Twist(linear, angular);
-//                            twist.setMessageType(Twist.TYPE);
-//
-//                            // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
-//                            // System.currentTimeMillis()精度可能不够，但是现在没有使用这个字段
-//                            String publishId = "publish_chatter_" + System.currentTimeMillis();
-//                            JsonObject call = Json.createObjectBuilder()
-//                                    .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
-//                                    .add(JRosbridge.FIELD_ID, publishId)
-//                                    .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
-//                                    .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
-//
-//                            byte[] messageBytes = call.toString().getBytes();
-//                            int contentLength = messageBytes.length;
-//                            StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
-//                            int strLen = headerLengthString.length();
-//                            // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
-//                            if (strLen < 10) {
-//                                for (int i = strLen; i < 10; i++) {
-//                                    headerLengthString.append("_");
-//                                }
-//                            }
-//
-//                            byte[] headerBytes = headerLengthString.toString().getBytes();
-//                            byte[] contentBytes = new byte[contentLength + 10];
-//                            System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
-//                            System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
-//
-//                            ByteBuffer byteBuffer = ByteBuffer.wrap(contentBytes);
-//                            mSocketChannel.write(byteBuffer);
-//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                         }
                         // 处理输入事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
                         if (key.isReadable()) {
-//                            ByteBuffer byteBuffer = ByteBuffer.allocate(1024 * 4);
-//                            int len = 0;
-//                            // 捕获异常，因为在服务端关闭后会发送FIN报文，会触发read事件，但连接已关闭,此时read()会产生异常
-//                            try {
-//                                if ((len = mSocketChannel.read(byteBuffer)) > 0) {
-//                                    System.out.println("接收到來自服务器的消息\t");
-//                                    System.out.println(new String(byteBuffer.array(), 0, len));
-//                                }
-//                            } catch (IOException e) {
-//                                System.out.println("服务器异常，请联系客服人员!正在关闭客户端.........");
-//                                key.cancel();
-//                                mSocketChannel.close();
-//                            }
+                            Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
                         }
                     }
                 } else {
@@ -379,54 +333,8 @@ public class MainActivity extends AppCompatActivity {
                         mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mLeftSpeed));
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mRightSpeed));
                     });
-//                    String url = HOST + "teleop/5/" + leftSpeed + "/" + rightSpeed;
-//                    call(url, Collections.emptyMap(), new Callback() {
-//                        @Override
-//                        public void onFailure(@NotNull Call call, @NotNull IOException e) {
-//                            Log.e(TAG, "onFailure: ", e);
-//                        }
-//
-//                        @Override
-//                        public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-//                            ResponseBody body = response.body();
-//                            if (body != null) {
-//                                Log.i(TAG, "onResponse: " + body.string());
-//                            }
-//                        }
-//                    });
-
-//                    Vector3 angular = new Vector3(0, 0, 0);
-//                    Vector3 linear = new Vector3(1, 0, 0);
-//                    Twist twist = new Twist(linear, angular);
-//                    twist.setMessageType(Twist.TYPE);
-//
-//                    // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
-//                    // System.currentTimeMillis()精度可能不够，但是现在没有使用这个字段
-//                    String publishId = "publish_chatter_" + System.currentTimeMillis();
-//                    JsonObject call = Json.createObjectBuilder()
-//                            .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
-//                            .add(JRosbridge.FIELD_ID, publishId)
-//                            .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
-//                            .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
-//
-//                    byte[] messageBytes = call.toString().getBytes();
-//                    int contentLength = messageBytes.length;
-//                    StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
-//                    int strLen = headerLengthString.length();
-//                    // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
-//                    if (strLen < 10) {
-//                        for (int i = strLen; i < 10; i++) {
-//                            headerLengthString.append("_");
-//                        }
-//                    }
-//
-//                    byte[] headerBytes = headerLengthString.toString().getBytes();
-//                    byte[] contentBytes = new byte[contentLength + 10];
-//                    System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
-//                    System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
 
                     ByteBuffer byteBuffer = createMessageContent(1);
-
                     mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
                 }
             } catch (Exception e) {
