@@ -19,13 +19,27 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+
+import edu.wpi.rail.jrosbridge.JRosbridge;
+import edu.wpi.rail.jrosbridge.messages.geometry.Twist;
+import edu.wpi.rail.jrosbridge.messages.geometry.Vector3;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -198,6 +212,112 @@ public class MainActivity extends AppCompatActivity {
 
         Thread thread = new Action();
         thread.start();
+    }
+
+    public void rosBridgeTcpTest() throws IOException {
+        try {
+            // 初始化客户端
+            SocketChannel socket = SocketChannel.open();
+            socket.configureBlocking(false);
+            Selector selector = Selector.open();
+            // 注册连接事件
+            socket.register(selector, SelectionKey.OP_CONNECT);
+            // 发起连接
+            socket.connect(new InetSocketAddress("localhost", 9090));
+            boolean advertised = false;
+            // 轮询处理
+            while (true) {
+                if (socket.isOpen()) {
+                    // 在注册的键中选择已准备就绪的事件
+                    selector.select();
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    // 已选择键集
+                    Set<SelectionKey> keys = selector.selectedKeys();
+                    Iterator<SelectionKey> iterator = keys.iterator();
+                    // 处理准备就绪的事件
+                    while (iterator.hasNext()) {
+                        SelectionKey key = iterator.next();
+                        // 删除当前键，避免重复消费
+                        iterator.remove();
+                        // 连接
+                        if (key.isConnectable()) {
+                            // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
+                            while (!socket.finishConnect()) {
+                                System.out.println("连接中");
+                            }
+                            // 连接成功，注册写事件
+                            socket.register(selector, SelectionKey.OP_WRITE);
+
+                        }
+
+                        if (key.isWritable()) { // 通道可写入数据了
+//                            Message message = new Message("{\"data\": \"test tcp hello world yinlei."
+//                                    + DateUtils.toDateString(DateUtils.YMDHMS) + "\"}");
+
+                            Vector3 angular = new Vector3(0, 0, 0);
+                            Vector3 linear = new Vector3(1, 0, 0);
+                            Twist twist = new Twist(linear, angular);
+                            twist.setMessageType(Twist.TYPE);
+
+                            // 事实上，现在是发送socket数据，不使用原来的协议也是OK的，现在仍然使用，兼容以后
+                            String publishId = "publish_chatter_" + System.currentTimeMillis();
+                            JsonObject call = Json.createObjectBuilder()
+                                    .add(JRosbridge.FIELD_OP, JRosbridge.OP_CODE_PUBLISH)
+                                    .add(JRosbridge.FIELD_ID, publishId)
+                                    .add(JRosbridge.FIELD_TOPIC, "chatter_forward")
+                                    .add(JRosbridge.FIELD_MESSAGE, twist.toJsonObject()).build();
+
+                            byte[] messageBytes = call.toString().getBytes();
+                            int contentLength = messageBytes.length;
+                            StringBuilder headerLengthString = new StringBuilder(String.valueOf(contentLength));
+                            int strLen = headerLengthString.length();
+                            // python无法直接接收int转成的byte[],现在使用string代替，多占了6个字节而已
+                            if (strLen < 10) {
+                                for (int i = strLen; i < 10; i++) {
+                                    headerLengthString.append("_");
+                                }
+                            }
+
+                            byte[] headerBytes = headerLengthString.toString().getBytes();
+                            byte[] contentBytes = new byte[contentLength + 10];
+                            System.arraycopy(headerBytes, 0, contentBytes, 0, 10);
+                            System.arraycopy(messageBytes, 0, contentBytes, 10, contentLength);
+
+                            ByteBuffer byteBuffer = ByteBuffer.wrap(contentBytes);
+                            socket.write(byteBuffer);
+                            socket.register(selector, SelectionKey.OP_WRITE);
+                        }
+                        // 处理输入事件，服务端的返回数据，事实上，不需要处理
+                        if (key.isReadable()) {
+                            ByteBuffer byteBuffer = ByteBuffer.allocate(1024 * 4);
+                            int len = 0;
+                            // 捕获异常，因为在服务端关闭后会发送FIN报文，会触发read事件，但连接已关闭,此时read()会产生异常
+                            try {
+
+                                if ((len = socket.read(byteBuffer)) > 0) {
+                                    System.out.println("接收到來自服务器的消息\t");
+                                    System.out.println(new String(byteBuffer.array(), 0, len));
+                                }
+                            } catch (IOException e) {
+                                System.out.println("服务器异常，请联系客服人员!正在关闭客户端.........");
+                                key.cancel();
+                                socket.close();
+                            }
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("客户端异常，请重启！");
+            e.printStackTrace();
+        }
     }
 
     public class Action extends Thread {
