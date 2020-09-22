@@ -91,7 +91,8 @@ public class MainActivity extends AppCompatActivity {
         speedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
 
         mHandler = new UpdateViewHandler(this);
-
+        // 启动发送到ROS的socket服务
+        startRosService();
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
 
@@ -223,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         return ByteBuffer.wrap(contentBytes);
     }
 
-    public void startRosService() throws IOException {
+    public void startRosService() {
         try {
             // 初始化客户端
             mSocketChannel = SocketChannel.open();
@@ -233,13 +234,13 @@ public class MainActivity extends AppCompatActivity {
             mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
             // 发起连接
             mSocketChannel.connect(new InetSocketAddress("localhost", 9090));
-            // 轮询处理
+            // 轮询处理所有注册的监听事件
             while (true) {
                 if (mSocketChannel.isOpen()) {
                     // 在注册的键中选择已准备就绪的事件
                     mSelector.select();
                     try {
-                        // 控制发送的节奏
+                        // TODO 控制发送的节奏，可能不需要，后面根据实际情况调整
                         TimeUnit.MILLISECONDS.sleep(100);
                     } catch (InterruptedException e) {
                         Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
@@ -256,16 +257,17 @@ public class MainActivity extends AppCompatActivity {
                         if (key.isConnectable()) {
                             // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
                             while (!mSocketChannel.finishConnect()) {
-                                System.out.println("连接中");
+                                Log.d(TAG, "startRosService: SocketChannel finishConnect...");
                             }
-                            // 连接成功，注册写事件
-                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
+                            // 连接成功，注册写事件，这里不需要注册
+//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                         }
 
-                        if (key.isWritable()) { // 通道可写入数据了
+                        // 处理写事件，发送数据到服务端
+                        if (key.isWritable()) {
                             mSocketChannel.write((ByteBuffer) key.attachment());
                         }
-                        // 处理输入事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
+                        // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
                         if (key.isReadable()) {
                             Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
                         }
