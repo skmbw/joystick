@@ -233,12 +233,6 @@ public class MainActivity extends AppCompatActivity {
                     if (mSocketChannel.isOpen()) {
                         // 在注册的键中选择已准备就绪的事件
                         mSelector.select();
-//                        try {
-//                            // 控制发送的节奏，可能不需要，后面根据实际情况调整
-//                            TimeUnit.MILLISECONDS.sleep(100);
-//                        } catch (InterruptedException e) {
-//                            Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
-//                        }
                         // 获取当前事件集
                         Set<SelectionKey> keys = mSelector.selectedKeys();
                         Iterator<SelectionKey> iterator = keys.iterator();
@@ -266,6 +260,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     } else {
+                        Log.i(TAG, "startSocket: SocketChannel.isOpen is false.");
                         break;
                     }
                 }
@@ -342,10 +337,6 @@ public class MainActivity extends AppCompatActivity {
             if (speed <= 0D) {
                 speed = 0D;
             }
-//            try {
-//                TimeUnit.MILLISECONDS.sleep(500);
-//            } catch (InterruptedException ignored) {
-//            }
             direct = mapTurn(turn);
         } else {
             direct = "停止";
