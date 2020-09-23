@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="ui_joystick_hor_margin">25dp</dimen>
-    <dimen name="ui_joystick_bottom_margin">25dp</dimen>
+    <dimen name="ui_joystick_bottom_margin">50dp</dimen>
 
     <!-- 控制盘的大小 -->
-    <dimen name="ui_joystick_pad_size">220dp</dimen>
+    <dimen name="ui_joystick_pad_size">360dp</dimen>
 
     <!-- 背景圆的半径 -->
-    <dimen name="ui_joystick_round_bg_radius">110dp</dimen>
+    <dimen name="ui_joystick_round_bg_radius">160dp</dimen>
 
     <!-- 控制盘可活动区域的宽度 -->
-    <dimen name="ui_joystick_whole_field_wid">340dp</dimen>
-    <dimen name="ui_joystick_whole_field_height">330dp</dimen>
+    <dimen name="ui_joystick_whole_field_wid">410dp</dimen>
+    <dimen name="ui_joystick_whole_field_height">390dp</dimen>
 
     <!-- 背景圆到view边界的距离 -->
     <dimen name="ui_joystick_circle_bg_padding">30dp</dimen>

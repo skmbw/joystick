@@ -38,8 +38,8 @@ public class DefaultController implements IJoystickController {
 
     @Override
     public void createViews() {
-        createLeftControlTouchView();
-        containerView.addView(leftControlTouchView);
+//        createLeftControlTouchView();
+//        containerView.addView(leftControlTouchView);
 
         createRightControlTouchView();
         containerView.addView(rightControlTouchView);
@@ -47,8 +47,8 @@ public class DefaultController implements IJoystickController {
 
     @Override
     public void showViews(boolean showAnimation) {
-        leftControlTouchView.clearAnimation();
-        leftControlTouchView.setVisibility(View.VISIBLE);
+//        leftControlTouchView.clearAnimation();
+//        leftControlTouchView.setVisibility(View.VISIBLE);
 
         rightControlTouchView.clearAnimation();
         rightControlTouchView.setVisibility(View.VISIBLE);
@@ -103,6 +103,7 @@ public class DefaultController implements IJoystickController {
         );
         params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+
         rightControlTouchView.setLayoutParams(params);
 
     }

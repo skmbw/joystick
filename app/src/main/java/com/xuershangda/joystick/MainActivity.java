@@ -149,31 +149,31 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        defaultController.setLeftTouchViewListener(new JoystickTouchViewListener() {
-            @Override
-            public void onTouch(float horizontalPercent, float verticalPercent) {
-                Log.d(TAG, "onTouch left: " + horizontalPercent + ", " + verticalPercent);
-                speedUp(horizontalPercent, verticalPercent);
-            }
-
-            @Override
-            public void onReset() {
-                // 回到控制点，停止
-                Log.d(TAG, "onReset: left, driving mode = " + drivingMode.toString());
-                // 重置显示信息
-                drivingMode.set(0);
-            }
-
-            @Override
-            public void onActionDown() {
-                Log.d(TAG, "onActionDown: left");
-            }
-
-            @Override
-            public void onActionUp() {
-                Log.d(TAG, "onActionUp: left, stop.");
-            }
-        });
+//        defaultController.setLeftTouchViewListener(new JoystickTouchViewListener() {
+//            @Override
+//            public void onTouch(float horizontalPercent, float verticalPercent) {
+//                Log.d(TAG, "onTouch left: " + horizontalPercent + ", " + verticalPercent);
+//                speedUp(horizontalPercent, verticalPercent);
+//            }
+//
+//            @Override
+//            public void onReset() {
+//                // 回到控制点，停止
+//                Log.d(TAG, "onReset: left, driving mode = " + drivingMode.toString());
+//                // 重置显示信息
+//                drivingMode.set(0);
+//            }
+//
+//            @Override
+//            public void onActionDown() {
+//                Log.d(TAG, "onActionDown: left");
+//            }
+//
+//            @Override
+//            public void onActionUp() {
+//                Log.d(TAG, "onActionUp: left, stop.");
+//            }
+//        });
 
         Thread thread = new Action();
         thread.start();
