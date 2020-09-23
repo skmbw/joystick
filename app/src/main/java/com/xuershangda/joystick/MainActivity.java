@@ -227,7 +227,8 @@ public class MainActivity extends AppCompatActivity {
                 // 注册连接事件
                 mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                 // 发起连接
-                mSocketChannel.connect(new InetSocketAddress("10.1.205.126", 9090));
+//                mSocketChannel.connect(new InetSocketAddress("10.1.205.126", 9090));
+                mSocketChannel.connect(new InetSocketAddress("10.1.101.31", 9090));
                 // 轮询处理所有注册的监听事件
                 while (true) {
                     if (mSocketChannel.isOpen()) {
@@ -239,8 +240,7 @@ public class MainActivity extends AppCompatActivity {
                         // 处理准备就绪的事件
                         while (iterator.hasNext()) {
                             SelectionKey key = iterator.next();
-                            // 删除当前键，避免重复消费，in fact不会重复的
-                            iterator.remove();
+
                             // 连接
                             if (key.isConnectable()) {
                                 // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
@@ -253,11 +253,14 @@ public class MainActivity extends AppCompatActivity {
                             if (key.isWritable()) {
                                 Log.i(TAG, "startRosService: SocketChannel.write message.");
                                 mSocketChannel.write((ByteBuffer) key.attachment());
+//                                mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                             }
                             // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
                             if (key.isReadable()) {
                                 Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
                             }
+                            // 删除当前键，避免重复消费
+                            iterator.remove();
                         }
                     } else {
                         Log.i(TAG, "startSocket: SocketChannel.isOpen is false.");
