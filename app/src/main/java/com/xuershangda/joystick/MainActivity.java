@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -37,13 +36,10 @@ import edu.wpi.rail.jrosbridge.messages.geometry.Vector3;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private static final String HOST = "http://10.1.163.96:9090/";
     private Double mSpeed = 0D;
     private Double mTurnSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
     private TextView mDirectView;
-//    private double baseSpeed = 0.2D;
-//    private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private TextView mLeftWheel;
     private TextView mRightWheel;
     private Handler mHandler;
@@ -217,10 +213,12 @@ public class MainActivity extends AppCompatActivity {
         private Selector mSelector;
 
         public RobotTeleopTask() {
-            startRosService();
+            // 新启动线程，否则socket会阻塞
+            Thread thread = new Thread(this::startSocket);
+            thread.start();
         }
 
-        private void startRosService() {
+        private void startSocket() {
             try {
                 // 初始化客户端
                 mSocketChannel = SocketChannel.open();
@@ -229,18 +227,18 @@ public class MainActivity extends AppCompatActivity {
                 // 注册连接事件
                 mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                 // 发起连接
-                mSocketChannel.connect(new InetSocketAddress("localhost", 9090));
+                mSocketChannel.connect(new InetSocketAddress("10.1.205.126", 9090));
                 // 轮询处理所有注册的监听事件
                 while (true) {
                     if (mSocketChannel.isOpen()) {
                         // 在注册的键中选择已准备就绪的事件
                         mSelector.select();
-                        try {
-                            // TODO 控制发送的节奏，可能不需要，后面根据实际情况调整
-                            TimeUnit.MILLISECONDS.sleep(100);
-                        } catch (InterruptedException e) {
-                            Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
-                        }
+//                        try {
+//                            // 控制发送的节奏，可能不需要，后面根据实际情况调整
+//                            TimeUnit.MILLISECONDS.sleep(100);
+//                        } catch (InterruptedException e) {
+//                            Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
+//                        }
                         // 获取当前事件集
                         Set<SelectionKey> keys = mSelector.selectedKeys();
                         Iterator<SelectionKey> iterator = keys.iterator();
@@ -259,6 +257,7 @@ public class MainActivity extends AppCompatActivity {
 
                             // 处理写事件，发送数据到服务端
                             if (key.isWritable()) {
+                                Log.i(TAG, "startRosService: SocketChannel.write message.");
                                 mSocketChannel.write((ByteBuffer) key.attachment());
                             }
                             // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
@@ -343,10 +342,10 @@ public class MainActivity extends AppCompatActivity {
             if (speed <= 0D) {
                 speed = 0D;
             }
-            try {
-                TimeUnit.MILLISECONDS.sleep(500);
-            } catch (InterruptedException ignored) {
-            }
+//            try {
+//                TimeUnit.MILLISECONDS.sleep(500);
+//            } catch (InterruptedException ignored) {
+//            }
             direct = mapTurn(turn);
         } else {
             direct = "停止";
