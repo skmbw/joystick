@@ -14,18 +14,14 @@ import com.xuershangda.joystick.controller.DefaultController;
 import com.xuershangda.joystick.listener.JoystickTouchViewListener;
 import com.xuershangda.joystick.utils.BigDecimalUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -38,26 +34,18 @@ import javax.json.JsonObject;
 import edu.wpi.rail.jrosbridge.JRosbridge;
 import edu.wpi.rail.jrosbridge.messages.geometry.Twist;
 import edu.wpi.rail.jrosbridge.messages.geometry.Vector3;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String HOST = "http://10.1.163.96:9090/";
-    private OkHttpClient mOkHttpClient;
     private Double mLeftSpeed = 0D;
     private Double mRightSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
-    private TextView mTextView;
+//    private TextView mTextView;
     private TextView mBaseSpeedView;
     private TextView mDirectView;
-    private TextView mDrivingMode;
-    private double baseSpeed = 0.5D;
+//    private TextView mDrivingMode;
+    private double baseSpeed = 0.2D;
     private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private TextView mLeftWheel;
     private TextView mRightWheel;
@@ -76,14 +64,14 @@ public class MainActivity extends AppCompatActivity {
             actionBar.hide();
         }
 
-        mOkHttpClient = new OkHttpClient();
+//        mOkHttpClient = new OkHttpClient();
         mBlockingDeque = new LinkedBlockingDeque<>();
-        mTextView = findViewById(R.id.sway);
+//        mTextView = findViewById(R.id.sway);
         mBaseSpeedView = findViewById(R.id.baseSpeed);
         mDirectView = findViewById(R.id.direction);
         Button speedUp = findViewById(R.id.speedUp);
         Button speedDown = findViewById(R.id.speedDown);
-        mDrivingMode = findViewById(R.id.drivingMode);
+//        mDrivingMode = findViewById(R.id.drivingMode);
         mLeftWheel = findViewById(R.id.leftWheel);
         mRightWheel = findViewById(R.id.rightWheel);
 
@@ -92,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
         mHandler = new UpdateViewHandler(this);
         // 启动发送到ROS的socket服务
-        startRosService();
+//        startRosService();
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
 
@@ -104,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
                 Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
-                Double[] speeds = mapSpeedMode(horizontalPercent, verticalPercent);
+                Double[] speeds = computeSpeed(horizontalPercent, verticalPercent);
                 Double leftSpeed = speeds[0];
                 Double rightSpeed = speeds[1];
 
@@ -141,11 +129,11 @@ public class MainActivity extends AppCompatActivity {
                 // 发送最后一个指令，停止运动
                 ByteBuffer byteBuffer = createMessageContent(0);
 
-                try {
-                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
-                } catch (ClosedChannelException e) {
-                    Log.e(TAG, "onReset: mSocketChannel 已关闭.", e);
-                }
+//                try {
+//                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+//                } catch (ClosedChannelException e) {
+//                    Log.e(TAG, "onReset: mSocketChannel 已关闭.", e);
+//                }
             }
 
             @Override
@@ -329,15 +317,15 @@ public class MainActivity extends AppCompatActivity {
                     mLeftSpeed = leftSpeed;
                     mRightSpeed = rightSpeed;
                     runOnUiThread(() -> {
-                        mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
+//                        mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
                         mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
-                        mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), dm));
+//                        mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), dm));
                         mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mLeftSpeed));
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mRightSpeed));
                     });
 
-                    ByteBuffer byteBuffer = createMessageContent(1);
-                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+//                    ByteBuffer byteBuffer = createMessageContent(1);
+//                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "run: Action 阻塞队列出错。", e);
@@ -355,118 +343,124 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private Double[] mapSpeedMode(double hp, double vp) {
-        double x = BigDecimalUtils.round(hp, 2);
-        double y = BigDecimalUtils.round(vp, 2);
-
+    /**
+     * 根据手势，计算速度和方向。返回线速度和角速度。
+     * <p>线速度控制速度(0, 2)开区间，负值算减速</p>
+     * <p>角速度控制方向[-1, 1]闭区间，0直行，负数右转，正数左转</p>
+     *
+     * @param hx x轴数值
+     * @param vy y轴数值
+     * @return 返回线速度和角速度
+     */
+    private Double[] computeSpeed(double hx, double vy) {
+        // 映射到角速度，控制方向，感觉这个值，不需要做转换，非常完美啊
+        double x = BigDecimalUtils.round(hx, 2);
+        // 映射到线速度，控制速度，需要处理负值
+        double y = BigDecimalUtils.round(vy, 2);
         Double[] speeds = new Double[2];
-        double leftWheel;
-        double rightWheel;
 
+        double speed = y; // 速度
+        double turn = -x; // 方向，坐标系是相反的
         String direct;
-
-        if (y > 0) { // 前进 y > 0; y > 0.1
-            if (x > 0) { // 右转，左轮速度 > 右轮速度
-                rightWheel = baseSpeed;
-                leftWheel = BigDecimalUtils.add(baseSpeed, x);
-                direct = "右转";
-            } else if (x < 0) { // 左转，右轮速度 > 左轮速度
-                leftWheel = baseSpeed;
-                rightWheel = BigDecimalUtils.add(baseSpeed, Math.abs(x));
-                direct = "左转";
-            } else { // 向前直行
-                leftWheel = baseSpeed;
-                rightWheel = baseSpeed;
-                direct = "前进";
+        if (y > 0) {
+            direct = mapTurn(turn);
+        } else if (y < 0) {
+            baseSpeed = BigDecimalUtils.round(baseSpeed + y, 2); // 减速
+            if (baseSpeed <= 0) {
+                baseSpeed = 0.2D;
             }
-        } else if (y < 0) { // 后退 y < 0
-            if (x > 0) { // 右转
-                rightWheel = -baseSpeed;
-                leftWheel = BigDecimalUtils.add(-baseSpeed, -x);
-                direct = "右后转";
-            } else if (x < 0) { // 左转
-                leftWheel = -baseSpeed;
-                rightWheel = BigDecimalUtils.add(-baseSpeed, x);
-                direct = "左后转";
-            } else { // 向后直行
-                leftWheel = -baseSpeed;
-                rightWheel = -baseSpeed;
-                direct = "后退";
-            }
+            speed = BigDecimalUtils.round(baseSpeed, 2);
+            direct = mapTurn(turn);
         } else {
-            leftWheel = 0;
-            rightWheel = 0;
             direct = "停止";
         }
-//        else { // 停下 -0.1 <= y <= 0.1
-//            if (x > 0) { // 90度右转
-//                leftWheel = baseSpeed;
-//                rightWheel = -baseSpeed;
-//                direct = "90度右转";
-//            } else if (x < 0) { // 90度左转
-//                leftWheel = -baseSpeed;
-//                rightWheel = baseSpeed;
-//                direct = "90度左转";
-//            } else { // 停止
-//                leftWheel = 0;
-//                rightWheel = 0;
-//                direct = "停止";
-//            }
-//        }
 
         runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
 
-        speeds[0] = leftWheel;
-        // 右轮速度快，两个轮子的速度不同步
-        speeds[1] = rightWheel;
-
+        speeds[0] = speed;
+        speeds[1] = turn;
         return speeds;
     }
 
-    /**
-     * OkHttpClient 封装了参数设置
-     * @param url url
-     * @param params 参数
-     * @param callback OkHttpClient Call对象 回调
-     */
-    protected void call(String url, Map<String, Object> params, Callback callback) {
-
-        Log.i(TAG, "okhttp call, url=[" + url + "]");
-        OkHttpClient okHttpClient = mOkHttpClient; // 如果不是单例，华为手机很容易堆栈溢出
-        MultipartBody.Builder builder = new MultipartBody.Builder("asdfSKMBW123456VTEFLF98765dd").setType(MultipartBody.FORM);
-
-        for (Map.Entry<String, Object> entry : params.entrySet()) {
-            String name = entry.getKey();
-            Object value = entry.getValue();
-            if (value instanceof List) {
-                List listValue = (List) value;
-                for (Object obj : listValue) {
-                    if (obj instanceof File) {
-                        File file = (File) obj;
-                        RequestBody body = RequestBody.create(MediaType.parse("application/octet-stream"), file);
-                        builder.addFormDataPart(name, file.getName(), body);
-                    } else {
-                        builder.addFormDataPart(name, obj.toString());
-                    }
-                }
-            }
+    private String mapTurn(double turn) {
+        String direct;
+        if (turn > 0) {
+            direct = "左转";
+        } else if (turn < 0) {
+            direct = "右转";
+        } else {
+            direct = "直行";
         }
-
-        Log.i(TAG, "BasicActivity call: okhttp create parameter finished.");
-
-        // Multipart body must have at least one part
-        // 如果一个参数都没有就不能添加body了，防止没有登录的情况
-        Request.Builder requestBuilder = new Request.Builder();
-
-        requestBuilder.url(url);
-        if (!params.isEmpty()) {
-            requestBuilder.post(builder.build());
-        }
-        Request request = requestBuilder.build();
-
-        Call call = okHttpClient.newCall(request);
-        call.enqueue(callback);
+        return direct;
     }
+
+//    private Double[] mapSpeedMode(double hp, double vp) {
+//        double x = BigDecimalUtils.round(hp, 2);
+//        double y = BigDecimalUtils.round(vp, 2);
+//
+//        Double[] speeds = new Double[2];
+//        double leftWheel;
+//        double rightWheel;
+//
+//        String direct;
+//
+//        if (y > 0) { // 前进 y > 0; y > 0.1
+//            if (x > 0) { // 右转，左轮速度 > 右轮速度
+//                rightWheel = baseSpeed;
+//                leftWheel = BigDecimalUtils.add(baseSpeed, x);
+//                direct = "右转";
+//            } else if (x < 0) { // 左转，右轮速度 > 左轮速度
+//                leftWheel = baseSpeed;
+//                rightWheel = BigDecimalUtils.add(baseSpeed, Math.abs(x));
+//                direct = "左转";
+//            } else { // 向前直行
+//                leftWheel = baseSpeed;
+//                rightWheel = baseSpeed;
+//                direct = "前进";
+//            }
+//        } else if (y < 0) { // 后退 y < 0
+//            if (x > 0) { // 右转
+//                rightWheel = -baseSpeed;
+//                leftWheel = BigDecimalUtils.add(-baseSpeed, -x);
+//                direct = "右后转";
+//            } else if (x < 0) { // 左转
+//                leftWheel = -baseSpeed;
+//                rightWheel = BigDecimalUtils.add(-baseSpeed, x);
+//                direct = "左后转";
+//            } else { // 向后直行
+//                leftWheel = -baseSpeed;
+//                rightWheel = -baseSpeed;
+//                direct = "后退";
+//            }
+//        } else {
+//            leftWheel = 0;
+//            rightWheel = 0;
+//            direct = "停止";
+//        }
+////        else { // 停下 -0.1 <= y <= 0.1
+////            if (x > 0) { // 90度右转
+////                leftWheel = baseSpeed;
+////                rightWheel = -baseSpeed;
+////                direct = "90度右转";
+////            } else if (x < 0) { // 90度左转
+////                leftWheel = -baseSpeed;
+////                rightWheel = baseSpeed;
+////                direct = "90度左转";
+////            } else { // 停止
+////                leftWheel = 0;
+////                rightWheel = 0;
+////                direct = "停止";
+////            }
+////        }
+//
+//        runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
+//
+//        speeds[0] = leftWheel;
+//        // 右轮速度快，两个轮子的速度不同步
+//        speeds[1] = rightWheel;
+//
+//        return speeds;
+//    }
 
     private static class UpdateViewHandler extends Handler {
 
@@ -481,10 +475,10 @@ public class MainActivity extends AppCompatActivity {
             switch (msg.what) {
                 case 1:
                     MainActivity activity = mReference.get();
-                    activity.mTextView.setText(String.format("%s%s", activity.getString(R.string.sway), 0));
+//                    activity.mTextView.setText(String.format("%s%s", activity.getString(R.string.sway), 0));
                     activity.mDirectView.setText(String.format("%s%s", activity.getString(R.string.direction), "停止"));
                     activity.mBaseSpeedView.setText(String.format("%s%s", activity.getString(R.string.baseSpeed), activity.baseSpeed));
-                    activity.mDrivingMode.setText(String.format("%s%s", activity.getString(R.string.drivingMode), "手动控制"));
+//                    activity.mDrivingMode.setText(String.format("%s%s", activity.getString(R.string.drivingMode), "手动控制"));
                     activity.mLeftWheel.setText(String.format("%s%s", activity.getString(R.string.leftWheel), 0));
                     activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
             }

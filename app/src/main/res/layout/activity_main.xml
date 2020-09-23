@@ -26,15 +26,15 @@
             android:textSize="22sp"
             android:text="@string/direction"/>
 
-        <TextView
-            android:id="@+id/sway"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_weight="0.9"
-            android:textColor="@color/colorAccent"
-            android:textSize="22sp"
-            android:text="@string/sway"/>
+<!--        <TextView-->
+<!--            android:id="@+id/sway"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginStart="10dp"-->
+<!--            android:layout_weight="0.9"-->
+<!--            android:textColor="@color/colorAccent"-->
+<!--            android:textSize="22sp"-->
+<!--            android:text="@string/sway"/>-->
 
         <TextView
             android:id="@+id/baseSpeed"
@@ -79,15 +79,15 @@
                 android:text="@string/speedDown"/>
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/drivingMode"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.9"
-            android:layout_marginStart="10dp"
-            android:textColor="@color/colorAccent"
-            android:textSize="22sp"
-            android:text="@string/drivingMode"/>
+<!--        <TextView-->
+<!--            android:id="@+id/drivingMode"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="0.9"-->
+<!--            android:layout_marginStart="10dp"-->
+<!--            android:textColor="@color/colorAccent"-->
+<!--            android:textSize="22sp"-->
+<!--            android:text="@string/drivingMode"/>-->
 
         <LinearLayout
             android:layout_width="0dp"
