@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -137,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                 mHandler.sendMessage(msg);
 
                 // 发送最后一个指令，停止运动
-                ByteBuffer byteBuffer = createMessageContent(0);
+                ByteBuffer byteBuffer = createMessageContent(0, 0);
                 mTeleopTask.sendMessage(byteBuffer);
             }
 
@@ -179,9 +180,9 @@ public class MainActivity extends AppCompatActivity {
 //        });
     }
 
-    public ByteBuffer createMessageContent(int speed) {
+    public ByteBuffer createMessageContent(double speed, double turn) {
         // 发送最后一个指令，停止运动
-        Vector3 angular = new Vector3(0, 0, 0);
+        Vector3 angular = new Vector3(0, 0, turn);
         Vector3 linear = new Vector3(speed, 0, 0);
         Twist twist = new Twist(linear, angular);
         twist.setMessageType(Twist.TYPE);
@@ -282,45 +283,45 @@ public class MainActivity extends AppCompatActivity {
 
         public void run() {
             try {
-                for (; ; ) {
+                for (;;) {
                     Double[] speeds = mBlockingDeque.take();
 
                     Log.d(TAG, "run: 从队列中获取控制命令成功。taskNumber=[" + mBlockingDeque.size() + "]");
 
                     Double leftSpeed = speeds[0];
                     Double rightSpeed = speeds[1];
-                    Log.d(TAG, "onTouch: leftWheel=" + leftSpeed + ", rightWheel=" + rightSpeed);
-                    double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
-                    String driving = "手动控制";
-                    if (drivingMode.compareAndSet(1, 1)) {
-                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        if (leftSpeed >= 0 && rightSpeed >= 0) {
-                            driving = "锁定直行";
-                            rightSpeed = Math.max(leftSpeed, rightSpeed);
-                            leftSpeed = rightSpeed;
-                        } else if (leftSpeed <= 0 && rightSpeed <= 0) {
-                            driving = "锁定后退";
-                            rightSpeed = Math.min(leftSpeed, rightSpeed);
-                            leftSpeed = rightSpeed;
-                        }
-                    } else if (drivingMode.compareAndSet(2, 2)) {
-                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        if (leftSpeed <= 0 && rightSpeed <= 0) {
-                            driving = "锁定后退";
-                            rightSpeed = Math.min(leftSpeed, rightSpeed);
-                            leftSpeed = rightSpeed;
-                        } else {
-                            if (leftSpeed >= 0 && rightSpeed >= 0) {
-                                driving = "锁定直行";
-                                rightSpeed = Math.max(leftSpeed, rightSpeed);
-                                leftSpeed = rightSpeed;
-                            }
-                        }
-                    } else {
-                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
-                        driving = "手动控制";
-                    }
-                    String dm = driving;
+                    Log.d(TAG, "onTouch: WheelSpeed=" + leftSpeed + ", AngularSpeed=" + rightSpeed);
+//                    double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
+//                    String driving = "手动控制";
+//                    if (drivingMode.compareAndSet(1, 1)) {
+//                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
+//                        if (leftSpeed >= 0 && rightSpeed >= 0) {
+//                            driving = "锁定直行";
+//                            rightSpeed = Math.max(leftSpeed, rightSpeed);
+//                            leftSpeed = rightSpeed;
+//                        } else if (leftSpeed <= 0 && rightSpeed <= 0) {
+//                            driving = "锁定后退";
+//                            rightSpeed = Math.min(leftSpeed, rightSpeed);
+//                            leftSpeed = rightSpeed;
+//                        }
+//                    } else if (drivingMode.compareAndSet(2, 2)) {
+//                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
+//                        if (leftSpeed <= 0 && rightSpeed <= 0) {
+//                            driving = "锁定后退";
+//                            rightSpeed = Math.min(leftSpeed, rightSpeed);
+//                            leftSpeed = rightSpeed;
+//                        } else {
+//                            if (leftSpeed >= 0 && rightSpeed >= 0) {
+//                                driving = "锁定直行";
+//                                rightSpeed = Math.max(leftSpeed, rightSpeed);
+//                                leftSpeed = rightSpeed;
+//                            }
+//                        }
+//                    } else {
+//                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
+//                        driving = "手动控制";
+//                    }
+//                    String dm = driving;
                     // 记录上一次的速度
                     mSpeed = leftSpeed;
                     mTurnSpeed = rightSpeed;
@@ -329,7 +330,7 @@ public class MainActivity extends AppCompatActivity {
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
                     });
 
-                    ByteBuffer byteBuffer = createMessageContent(1);
+                    ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
                     mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
                 }
             } catch (Exception e) {
@@ -338,7 +339,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void sendMessage(ByteBuffer byteBuffer) {
-
+            try {
+                mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+            } catch (ClosedChannelException e) {
+                Log.e(TAG, "sendMessage: register SelectionKey.OP_WRITE error.", e);
+            }
         }
     }
 
