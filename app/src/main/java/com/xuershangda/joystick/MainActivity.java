@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -42,18 +41,19 @@ public class MainActivity extends AppCompatActivity {
     private Double mSpeed = 0D;
     private Double mTurnSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
-//    private TextView mTextView;
+    //    private TextView mTextView;
 //    private TextView mBaseSpeedView;
     private TextView mDirectView;
-//    private TextView mDrivingMode;
+    //    private TextView mDrivingMode;
 //    private double baseSpeed = 0.2D;
     private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private TextView mLeftWheel;
     private TextView mRightWheel;
     private Handler mHandler;
 
-    private SocketChannel mSocketChannel;
-    private Selector mSelector;
+    //    private SocketChannel mSocketChannel;
+//    private Selector mSelector;
+    private RobotTeleopTask mTeleopTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,8 +82,15 @@ public class MainActivity extends AppCompatActivity {
         speedDown.setOnClickListener(view -> mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1));
 
         mHandler = new UpdateViewHandler(this);
-        // 启动发送到ROS的socket服务
-        startRosService();
+
+        // 启动通信任务
+        Thread thread = new Thread(() -> {
+            mTeleopTask = new RobotTeleopTask();
+            mTeleopTask.run();
+        });
+        thread.start();
+
+
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
 
@@ -131,12 +138,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // 发送最后一个指令，停止运动
                 ByteBuffer byteBuffer = createMessageContent(0);
-
-                try {
-                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
-                } catch (ClosedChannelException e) {
-                    Log.e(TAG, "onReset: mSocketChannel 已关闭.", e);
-                }
+                mTeleopTask.sendMessage(byteBuffer);
             }
 
             @Override
@@ -175,9 +177,6 @@ public class MainActivity extends AppCompatActivity {
 //                Log.d(TAG, "onActionUp: left, stop.");
 //            }
 //        });
-
-        Thread thread = new Action();
-        thread.start();
     }
 
     public ByteBuffer createMessageContent(int speed) {
@@ -215,69 +214,75 @@ public class MainActivity extends AppCompatActivity {
         return ByteBuffer.wrap(contentBytes);
     }
 
-    public void startRosService() {
-        try {
-            // 初始化客户端
-            mSocketChannel = SocketChannel.open();
-            mSocketChannel.configureBlocking(false);
-            mSelector = Selector.open();
-            // 注册连接事件
-            mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
-            // 发起连接
-            mSocketChannel.connect(new InetSocketAddress("localhost", 9090));
-            // 轮询处理所有注册的监听事件
-            while (true) {
-                if (mSocketChannel.isOpen()) {
-                    // 在注册的键中选择已准备就绪的事件
-                    mSelector.select();
-                    try {
-                        // TODO 控制发送的节奏，可能不需要，后面根据实际情况调整
-                        TimeUnit.MILLISECONDS.sleep(100);
-                    } catch (InterruptedException e) {
-                        Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
-                    }
-                    // 获取当前事件集
-                    Set<SelectionKey> keys = mSelector.selectedKeys();
-                    Iterator<SelectionKey> iterator = keys.iterator();
-                    // 处理准备就绪的事件
-                    while (iterator.hasNext()) {
-                        SelectionKey key = iterator.next();
-                        // 删除当前键，避免重复消费，in fact不会重复的
-                        iterator.remove();
-                        // 连接
-                        if (key.isConnectable()) {
-                            // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
-                            while (!mSocketChannel.finishConnect()) {
-                                Log.d(TAG, "startRosService: SocketChannel finishConnect...");
-                            }
-                            // 连接成功，注册写事件，这里不需要注册
-//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
-                        }
+    public class RobotTeleopTask {
+        private SocketChannel mSocketChannel;
+        private Selector mSelector;
 
-                        // 处理写事件，发送数据到服务端
-                        if (key.isWritable()) {
-                            mSocketChannel.write((ByteBuffer) key.attachment());
-                        }
-                        // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
-                        if (key.isReadable()) {
-                            Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
-                        }
-                    }
-                } else {
-                    break;
-                }
-            }
-
-        } catch (IOException e) {
-            Log.e(TAG, "server error. " + e.getMessage());
+        public RobotTeleopTask() {
+            startRosService();
         }
-    }
 
-    public class Action extends Thread {
-        @Override
+        private void startRosService() {
+            try {
+                // 初始化客户端
+                mSocketChannel = SocketChannel.open();
+                mSocketChannel.configureBlocking(false);
+                mSelector = Selector.open();
+                // 注册连接事件
+                mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
+                // 发起连接
+                mSocketChannel.connect(new InetSocketAddress("localhost", 9090));
+                // 轮询处理所有注册的监听事件
+                while (true) {
+                    if (mSocketChannel.isOpen()) {
+                        // 在注册的键中选择已准备就绪的事件
+                        mSelector.select();
+                        try {
+                            // TODO 控制发送的节奏，可能不需要，后面根据实际情况调整
+                            TimeUnit.MILLISECONDS.sleep(100);
+                        } catch (InterruptedException e) {
+                            Log.d(TAG, "startRosService: 控制发送节奏，线程中断。");
+                        }
+                        // 获取当前事件集
+                        Set<SelectionKey> keys = mSelector.selectedKeys();
+                        Iterator<SelectionKey> iterator = keys.iterator();
+                        // 处理准备就绪的事件
+                        while (iterator.hasNext()) {
+                            SelectionKey key = iterator.next();
+                            // 删除当前键，避免重复消费，in fact不会重复的
+                            iterator.remove();
+                            // 连接
+                            if (key.isConnectable()) {
+                                // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
+                                while (!mSocketChannel.finishConnect()) {
+                                    Log.d(TAG, "startRosService: SocketChannel finishConnect...");
+                                }
+                                // 连接成功，注册写事件，这里不需要注册
+                                // mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
+                            }
+
+                            // 处理写事件，发送数据到服务端
+                            if (key.isWritable()) {
+                                mSocketChannel.write((ByteBuffer) key.attachment());
+                            }
+                            // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
+                            if (key.isReadable()) {
+                                Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+            } catch (IOException e) {
+                Log.e(TAG, "server error. " + e.getMessage());
+            }
+        }
+
         public void run() {
             try {
-                for (;;) {
+                for (; ; ) {
                     Double[] speeds = mBlockingDeque.take();
 
                     Log.d(TAG, "run: 从队列中获取控制命令成功。taskNumber=[" + mBlockingDeque.size() + "]");
@@ -320,9 +325,6 @@ public class MainActivity extends AppCompatActivity {
                     mSpeed = leftSpeed;
                     mTurnSpeed = rightSpeed;
                     runOnUiThread(() -> {
-//                        mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
-//                        mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
-//                        mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), dm));
                         mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mSpeed));
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
                     });
@@ -334,17 +336,21 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "run: Action 阻塞队列出错。", e);
             }
         }
-    }
 
-    private void speedUp(double hp, double vp) {
-        double y = BigDecimalUtils.round(vp, 2);
+        public void sendMessage(ByteBuffer byteBuffer) {
 
-        if (y > 0) {
-            drivingMode.set(1);
-        } else {
-            drivingMode.set(2);
         }
     }
+
+//    private void speedUp(double hp, double vp) {
+//        double y = BigDecimalUtils.round(vp, 2);
+//
+//        if (y > 0) {
+//            drivingMode.set(1);
+//        } else {
+//            drivingMode.set(2);
+//        }
+//    }
 
     /**
      * 根据手势，计算速度和方向。返回线速度和角速度。
@@ -414,10 +420,7 @@ public class MainActivity extends AppCompatActivity {
             switch (msg.what) {
                 case 1:
                     MainActivity activity = mReference.get();
-//                    activity.mTextView.setText(String.format("%s%s", activity.getString(R.string.sway), 0));
                     activity.mDirectView.setText(String.format("%s%s", activity.getString(R.string.direction), "停止"));
-//                    activity.mBaseSpeedView.setText(String.format("%s%s", activity.getString(R.string.baseSpeed), activity.baseSpeed));
-//                    activity.mDrivingMode.setText(String.format("%s%s", activity.getString(R.string.drivingMode), "手动控制"));
                     activity.mLeftWheel.setText(String.format("%s%s", activity.getString(R.string.leftWheel), 0));
                     activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
             }
