@@ -102,7 +102,7 @@
                 android:layout_marginStart="6dp"
                 android:textColor="@color/colorAccent"
                 android:textSize="20sp"
-                android:text="@string/speedDown"/>
+                android:text="@string/straight"/>
         </LinearLayout>
 
 <!--        <TextView-->
