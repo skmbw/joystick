@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -44,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private BlockingDeque<Double[]> mBlockingDeque;
     private TextView mDirectView;
 //    private double baseSpeed = 0.2D;
-    private volatile AtomicInteger drivingMode = new AtomicInteger(0);
+//    private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private TextView mLeftWheel;
     private TextView mRightWheel;
     private Handler mHandler;
