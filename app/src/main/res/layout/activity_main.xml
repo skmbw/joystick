@@ -95,14 +95,14 @@
                 android:textSize="20sp"
                 android:text="@string/speedDown"/>
 
-            <Button
-                android:id="@+id/straight"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:textColor="@color/colorAccent"
-                android:textSize="20sp"
-                android:text="@string/straight"/>
+<!--            <Button-->
+<!--                android:id="@+id/straight"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginStart="6dp"-->
+<!--                android:textColor="@color/colorAccent"-->
+<!--                android:textSize="20sp"-->
+<!--                android:text="@string/straight"/>-->
         </LinearLayout>
 
 <!--        <TextView-->
