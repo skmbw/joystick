@@ -331,10 +331,14 @@ public class MainActivity extends AppCompatActivity {
                     });
 
                     ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
-                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+                    try {
+                        mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+                    } catch (ClosedChannelException e) {
+                        Log.e(TAG, "loop run: register SelectionKey.OP_WRITE error.", e);
+                    }
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "run: Action 阻塞队列出错。", e);
+            } catch (InterruptedException e) {
+                Log.e(TAG, "loop run: 阻塞队列出错。", e);
             }
         }
 
