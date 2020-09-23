@@ -5,9 +5,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-
-import org.jetbrains.annotations.Nullable;
-
 import android.graphics.Matrix;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -19,6 +16,8 @@ import com.xuershangda.joystick.model.PadLocationType;
 import com.xuershangda.joystick.model.PadStyle;
 import com.xuershangda.joystick.model.TouchViewModel;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * 触摸式控制盘
  * 假设背景是一个圆盘
@@ -26,7 +25,7 @@ import com.xuershangda.joystick.model.TouchViewModel;
  * 圆盘外围绕着一个箭头
  */
 public class TouchView extends View {
-    private static final String TAG = "rustAppTouchView";
+    private static final String TAG = "TouchView";
 
     private Bitmap bgBmp;        // 视图背景图片  假设是一个圆盘
     private Bitmap touchBmp;     // 视图中间的随手指移动的图片  假设是一个圆球

@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -82,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
 
         mHandler = new UpdateViewHandler(this);
         // 启动发送到ROS的socket服务
-//        startRosService();
+        startRosService();
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
 
@@ -131,11 +132,11 @@ public class MainActivity extends AppCompatActivity {
                 // 发送最后一个指令，停止运动
                 ByteBuffer byteBuffer = createMessageContent(0);
 
-//                try {
-//                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
-//                } catch (ClosedChannelException e) {
-//                    Log.e(TAG, "onReset: mSocketChannel 已关闭.", e);
-//                }
+                try {
+                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+                } catch (ClosedChannelException e) {
+                    Log.e(TAG, "onReset: mSocketChannel 已关闭.", e);
+                }
             }
 
             @Override
@@ -326,8 +327,8 @@ public class MainActivity extends AppCompatActivity {
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
                     });
 
-//                    ByteBuffer byteBuffer = createMessageContent(1);
-//                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+                    ByteBuffer byteBuffer = createMessageContent(1);
+                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "run: Action 阻塞队列出错。", e);
