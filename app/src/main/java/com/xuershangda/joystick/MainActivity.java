@@ -42,18 +42,13 @@ public class MainActivity extends AppCompatActivity {
     private Double mSpeed = 0D;
     private Double mTurnSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
-    //    private TextView mTextView;
-//    private TextView mBaseSpeedView;
     private TextView mDirectView;
-    //    private TextView mDrivingMode;
 //    private double baseSpeed = 0.2D;
     private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private TextView mLeftWheel;
     private TextView mRightWheel;
     private Handler mHandler;
 
-    //    private SocketChannel mSocketChannel;
-//    private Selector mSelector;
     private RobotTeleopTask mTeleopTask;
 
     @Override
@@ -66,21 +61,25 @@ public class MainActivity extends AppCompatActivity {
             actionBar.hide();
         }
 
-//        mOkHttpClient = new OkHttpClient();
         mBlockingDeque = new LinkedBlockingDeque<>();
-//        mTextView = findViewById(R.id.sway);
-//        mBaseSpeedView = findViewById(R.id.baseSpeed);
         mDirectView = findViewById(R.id.direction);
         Button speedUp = findViewById(R.id.speedUp);
         Button speedDown = findViewById(R.id.speedDown);
-//        mDrivingMode = findViewById(R.id.drivingMode);
         mLeftWheel = findViewById(R.id.leftWheel);
         mRightWheel = findViewById(R.id.rightWheel);
 
-//        speedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
-//        speedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
-        speedUp.setOnClickListener(view -> mSpeed = BigDecimalUtils.add(mSpeed, 0.1));
-        speedDown.setOnClickListener(view -> mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1));
+        speedUp.setOnClickListener(view -> {
+            mSpeed = BigDecimalUtils.add(mSpeed, 0.1);
+            if (mSpeed > 2D) {
+                mSpeed = 2D;
+            }
+        });
+        speedDown.setOnClickListener(view -> {
+            mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1);
+            if (mSpeed < 0) {
+                mSpeed = 0D;
+            }
+        });
 
         mHandler = new UpdateViewHandler(this);
 
@@ -90,7 +89,6 @@ public class MainActivity extends AppCompatActivity {
             mTeleopTask.run();
         });
         thread.start();
-
 
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
@@ -104,21 +102,21 @@ public class MainActivity extends AppCompatActivity {
             public void onTouch(float horizontalPercent, float verticalPercent) {
                 Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
                 Double[] speeds = computeSpeed(horizontalPercent, verticalPercent);
-                Double leftSpeed = speeds[0];
-                Double rightSpeed = speeds[1];
+                Double linearSpeed = speeds[0];
+                Double angularSpeed = speeds[1];
 
-                if (Math.abs(BigDecimalUtils.subtract(leftSpeed, mSpeed)) <= 0.02
-                        && Math.abs(BigDecimalUtils.subtract(rightSpeed, mTurnSpeed)) <= 0.02) {
-                    Log.d(TAG, "onTouch: 速度变化太小，忽略。mLeftSpeed=" + mSpeed + ", mRightSpeed="
-                            + mTurnSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
+                if (Math.abs(BigDecimalUtils.subtract(linearSpeed, mSpeed)) <= 0.02
+                        && Math.abs(BigDecimalUtils.subtract(angularSpeed, mTurnSpeed)) <= 0.02) {
+                    Log.d(TAG, "onTouch: 速度变化太小，忽略。mSpeed=" + mSpeed + ", mTurnSpeed="
+                            + mTurnSpeed + ", linearSpeed=" + linearSpeed + ", angularSpeed=" + angularSpeed);
                     return;
                 }
 
                 try {
-                    Log.d(TAG, "onTouch: mLeftSpeed=" + mSpeed + ", mRightSpeed="
-                            + mTurnSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
-                    mSpeed = leftSpeed;
-                    mTurnSpeed = rightSpeed;
+                    Log.d(TAG, "onTouch: mSpeed=" + mSpeed + ", mTurnSpeed="
+                            + mTurnSpeed + ", linearSpeed=" + linearSpeed + ", angularSpeed=" + angularSpeed);
+                    mSpeed = linearSpeed;
+                    mTurnSpeed = angularSpeed;
                     Log.d(TAG, "onTouch: 插入控制命令到队列成功。");
                     mBlockingDeque.put(speeds);
                     Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
@@ -258,8 +256,6 @@ public class MainActivity extends AppCompatActivity {
                                 while (!mSocketChannel.finishConnect()) {
                                     Log.d(TAG, "startRosService: SocketChannel finishConnect...");
                                 }
-                                // 连接成功，注册写事件，这里不需要注册
-                                // mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                             }
 
                             // 处理写事件，发送数据到服务端
@@ -291,37 +287,7 @@ public class MainActivity extends AppCompatActivity {
                     Double leftSpeed = speeds[0];
                     Double rightSpeed = speeds[1];
                     Log.d(TAG, "onTouch: WheelSpeed=" + leftSpeed + ", AngularSpeed=" + rightSpeed);
-//                    double diff = BigDecimalUtils.subtract(leftSpeed, rightSpeed);
-//                    String driving = "手动控制";
-//                    if (drivingMode.compareAndSet(1, 1)) {
-//                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
-//                        if (leftSpeed >= 0 && rightSpeed >= 0) {
-//                            driving = "锁定直行";
-//                            rightSpeed = Math.max(leftSpeed, rightSpeed);
-//                            leftSpeed = rightSpeed;
-//                        } else if (leftSpeed <= 0 && rightSpeed <= 0) {
-//                            driving = "锁定后退";
-//                            rightSpeed = Math.min(leftSpeed, rightSpeed);
-//                            leftSpeed = rightSpeed;
-//                        }
-//                    } else if (drivingMode.compareAndSet(2, 2)) {
-//                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
-//                        if (leftSpeed <= 0 && rightSpeed <= 0) {
-//                            driving = "锁定后退";
-//                            rightSpeed = Math.min(leftSpeed, rightSpeed);
-//                            leftSpeed = rightSpeed;
-//                        } else {
-//                            if (leftSpeed >= 0 && rightSpeed >= 0) {
-//                                driving = "锁定直行";
-//                                rightSpeed = Math.max(leftSpeed, rightSpeed);
-//                                leftSpeed = rightSpeed;
-//                            }
-//                        }
-//                    } else {
-//                        Log.d(TAG, "run: DrivingMode = " + drivingMode);
-//                        driving = "手动控制";
-//                    }
-//                    String dm = driving;
+
                     // 记录上一次的速度
                     mSpeed = leftSpeed;
                     mTurnSpeed = rightSpeed;
@@ -351,16 +317,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-//    private void speedUp(double hp, double vp) {
-//        double y = BigDecimalUtils.round(vp, 2);
-//
-//        if (y > 0) {
-//            drivingMode.set(1);
-//        } else {
-//            drivingMode.set(2);
-//        }
-//    }
-
     /**
      * 根据手势，计算速度和方向。返回线速度和角速度。
      * <p>线速度控制速度(0, 2)开区间，负值算减速</p>
@@ -383,14 +339,14 @@ public class MainActivity extends AppCompatActivity {
         if (y > 0) {
             direct = mapTurn(turn);
         } else if (y < 0) {
-//            baseSpeed = BigDecimalUtils.round(baseSpeed + y, 2); // 减速
-//            if (baseSpeed <= 0) {
-//                baseSpeed = 0.2D;
-//            }
             // 每次速度降低0.1
             speed = BigDecimalUtils.round(mSpeed * 0.9, 2);
             if (speed <= 0D) {
                 speed = 0D;
+            }
+            try {
+                TimeUnit.MILLISECONDS.sleep(500);
+            } catch (InterruptedException ignored) {
             }
             direct = mapTurn(turn);
         } else {
