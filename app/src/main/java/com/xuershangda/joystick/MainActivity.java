@@ -38,14 +38,14 @@ import edu.wpi.rail.jrosbridge.messages.geometry.Vector3;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String HOST = "http://10.1.163.96:9090/";
-    private Double mLeftSpeed = 0D;
-    private Double mRightSpeed = 0D;
+    private Double mSpeed = 0D;
+    private Double mTurnSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
 //    private TextView mTextView;
-    private TextView mBaseSpeedView;
+//    private TextView mBaseSpeedView;
     private TextView mDirectView;
 //    private TextView mDrivingMode;
-    private double baseSpeed = 0.2D;
+//    private double baseSpeed = 0.2D;
     private volatile AtomicInteger drivingMode = new AtomicInteger(0);
     private TextView mLeftWheel;
     private TextView mRightWheel;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 //        mOkHttpClient = new OkHttpClient();
         mBlockingDeque = new LinkedBlockingDeque<>();
 //        mTextView = findViewById(R.id.sway);
-        mBaseSpeedView = findViewById(R.id.baseSpeed);
+//        mBaseSpeedView = findViewById(R.id.baseSpeed);
         mDirectView = findViewById(R.id.direction);
         Button speedUp = findViewById(R.id.speedUp);
         Button speedDown = findViewById(R.id.speedDown);
@@ -75,8 +75,10 @@ public class MainActivity extends AppCompatActivity {
         mLeftWheel = findViewById(R.id.leftWheel);
         mRightWheel = findViewById(R.id.rightWheel);
 
-        speedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
-        speedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
+//        speedUp.setOnClickListener(view -> baseSpeed = BigDecimalUtils.add(baseSpeed, 0.1));
+//        speedDown.setOnClickListener(view -> baseSpeed = BigDecimalUtils.subtract(baseSpeed, 0.1));
+        speedUp.setOnClickListener(view -> mSpeed = BigDecimalUtils.add(mSpeed, 0.1));
+        speedDown.setOnClickListener(view -> mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1));
 
         mHandler = new UpdateViewHandler(this);
         // 启动发送到ROS的socket服务
@@ -96,18 +98,18 @@ public class MainActivity extends AppCompatActivity {
                 Double leftSpeed = speeds[0];
                 Double rightSpeed = speeds[1];
 
-                if (Math.abs(BigDecimalUtils.subtract(leftSpeed, mLeftSpeed)) <= 0.02
-                        && Math.abs(BigDecimalUtils.subtract(rightSpeed, mRightSpeed)) <= 0.02) {
-                    Log.d(TAG, "onTouch: 速度变化太小，忽略。mLeftSpeed=" + mLeftSpeed + ", mRightSpeed="
-                            + mRightSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
+                if (Math.abs(BigDecimalUtils.subtract(leftSpeed, mSpeed)) <= 0.02
+                        && Math.abs(BigDecimalUtils.subtract(rightSpeed, mTurnSpeed)) <= 0.02) {
+                    Log.d(TAG, "onTouch: 速度变化太小，忽略。mLeftSpeed=" + mSpeed + ", mRightSpeed="
+                            + mTurnSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
                     return;
                 }
 
                 try {
-                    Log.d(TAG, "onTouch: mLeftSpeed=" + mLeftSpeed + ", mRightSpeed="
-                            + mRightSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
-                    mLeftSpeed = leftSpeed;
-                    mRightSpeed = rightSpeed;
+                    Log.d(TAG, "onTouch: mLeftSpeed=" + mSpeed + ", mRightSpeed="
+                            + mTurnSpeed + ", leftSpeed=" + leftSpeed + ", rightSpeed=" + rightSpeed);
+                    mSpeed = leftSpeed;
+                    mTurnSpeed = rightSpeed;
                     Log.d(TAG, "onTouch: 插入控制命令到队列成功。");
                     mBlockingDeque.put(speeds);
                     Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
@@ -314,14 +316,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                     String dm = driving;
                     // 记录上一次的速度
-                    mLeftSpeed = leftSpeed;
-                    mRightSpeed = rightSpeed;
+                    mSpeed = leftSpeed;
+                    mTurnSpeed = rightSpeed;
                     runOnUiThread(() -> {
 //                        mTextView.setText(String.format("%s%s", getString(R.string.sway), diff));
-                        mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
+//                        mBaseSpeedView.setText(String.format("%s%s", getString(R.string.baseSpeed), baseSpeed));
 //                        mDrivingMode.setText(String.format("%s%s", getString(R.string.drivingMode), dm));
-                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mLeftSpeed));
-                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mRightSpeed));
+                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mSpeed));
+                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
                     });
 
 //                    ByteBuffer byteBuffer = createMessageContent(1);
@@ -365,11 +367,15 @@ public class MainActivity extends AppCompatActivity {
         if (y > 0) {
             direct = mapTurn(turn);
         } else if (y < 0) {
-            baseSpeed = BigDecimalUtils.round(baseSpeed + y, 2); // 减速
-            if (baseSpeed <= 0) {
-                baseSpeed = 0.2D;
+//            baseSpeed = BigDecimalUtils.round(baseSpeed + y, 2); // 减速
+//            if (baseSpeed <= 0) {
+//                baseSpeed = 0.2D;
+//            }
+            // 每次速度降低0.1
+            speed = BigDecimalUtils.round(mSpeed * 0.9, 2);
+            if (speed <= 0D) {
+                speed = 0D;
             }
-            speed = BigDecimalUtils.round(baseSpeed, 2);
             direct = mapTurn(turn);
         } else {
             direct = "停止";
@@ -394,74 +400,6 @@ public class MainActivity extends AppCompatActivity {
         return direct;
     }
 
-//    private Double[] mapSpeedMode(double hp, double vp) {
-//        double x = BigDecimalUtils.round(hp, 2);
-//        double y = BigDecimalUtils.round(vp, 2);
-//
-//        Double[] speeds = new Double[2];
-//        double leftWheel;
-//        double rightWheel;
-//
-//        String direct;
-//
-//        if (y > 0) { // 前进 y > 0; y > 0.1
-//            if (x > 0) { // 右转，左轮速度 > 右轮速度
-//                rightWheel = baseSpeed;
-//                leftWheel = BigDecimalUtils.add(baseSpeed, x);
-//                direct = "右转";
-//            } else if (x < 0) { // 左转，右轮速度 > 左轮速度
-//                leftWheel = baseSpeed;
-//                rightWheel = BigDecimalUtils.add(baseSpeed, Math.abs(x));
-//                direct = "左转";
-//            } else { // 向前直行
-//                leftWheel = baseSpeed;
-//                rightWheel = baseSpeed;
-//                direct = "前进";
-//            }
-//        } else if (y < 0) { // 后退 y < 0
-//            if (x > 0) { // 右转
-//                rightWheel = -baseSpeed;
-//                leftWheel = BigDecimalUtils.add(-baseSpeed, -x);
-//                direct = "右后转";
-//            } else if (x < 0) { // 左转
-//                leftWheel = -baseSpeed;
-//                rightWheel = BigDecimalUtils.add(-baseSpeed, x);
-//                direct = "左后转";
-//            } else { // 向后直行
-//                leftWheel = -baseSpeed;
-//                rightWheel = -baseSpeed;
-//                direct = "后退";
-//            }
-//        } else {
-//            leftWheel = 0;
-//            rightWheel = 0;
-//            direct = "停止";
-//        }
-////        else { // 停下 -0.1 <= y <= 0.1
-////            if (x > 0) { // 90度右转
-////                leftWheel = baseSpeed;
-////                rightWheel = -baseSpeed;
-////                direct = "90度右转";
-////            } else if (x < 0) { // 90度左转
-////                leftWheel = -baseSpeed;
-////                rightWheel = baseSpeed;
-////                direct = "90度左转";
-////            } else { // 停止
-////                leftWheel = 0;
-////                rightWheel = 0;
-////                direct = "停止";
-////            }
-////        }
-//
-//        runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
-//
-//        speeds[0] = leftWheel;
-//        // 右轮速度快，两个轮子的速度不同步
-//        speeds[1] = rightWheel;
-//
-//        return speeds;
-//    }
-
     private static class UpdateViewHandler extends Handler {
 
         private WeakReference<MainActivity> mReference;
@@ -477,7 +415,7 @@ public class MainActivity extends AppCompatActivity {
                     MainActivity activity = mReference.get();
 //                    activity.mTextView.setText(String.format("%s%s", activity.getString(R.string.sway), 0));
                     activity.mDirectView.setText(String.format("%s%s", activity.getString(R.string.direction), "停止"));
-                    activity.mBaseSpeedView.setText(String.format("%s%s", activity.getString(R.string.baseSpeed), activity.baseSpeed));
+//                    activity.mBaseSpeedView.setText(String.format("%s%s", activity.getString(R.string.baseSpeed), activity.baseSpeed));
 //                    activity.mDrivingMode.setText(String.format("%s%s", activity.getString(R.string.drivingMode), "手动控制"));
                     activity.mLeftWheel.setText(String.format("%s%s", activity.getString(R.string.leftWheel), 0));
                     activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
