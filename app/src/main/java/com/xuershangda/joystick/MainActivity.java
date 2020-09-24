@@ -236,10 +236,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void startSocket() {
-            try {
-                connect();
-                // 轮询处理所有注册的监听事件
-                while (true) {
+            connect();
+            // 轮询处理所有注册的监听事件
+            while (true) {
+                try {
                     if (mSocketChannel.isOpen()) {
                         // 在注册的键中选择已准备就绪的事件
                         int i = mSelector.select();
@@ -259,6 +259,7 @@ public class MainActivity extends AppCompatActivity {
                                     Log.d(TAG, "startRosService: SocketChannel finishConnect...");
                                 }
                                 Thread thread = new Thread(this::runLoop);
+                                // OutOfMemoryError: Could not allocate JNI Env
                                 thread.start();
                             }
 
@@ -283,18 +284,18 @@ public class MainActivity extends AppCompatActivity {
                         }
                     } else {
                         Log.i(TAG, "startSocket: SocketChannel.isOpen is false.");
-                        connect();
                         break;
                     }
+                } catch (IOException e) {
+                    Log.e(TAG, "server error. " + e.getMessage());
+                    connect();
                 }
-            } catch (IOException e) {
-                Log.e(TAG, "server error. " + e.getMessage());
             }
         }
 
         public void runLoop() {
-            try {
-                for (;;) {
+            for (;;) {
+                try {
                     Double[] speeds = mBlockingDeque.take();
 
                     Log.d(TAG, "run: 从队列中获取控制命令成功。taskNumber=[" + mBlockingDeque.size() + "]");
@@ -325,9 +326,9 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(TAG, "loop run: register SelectionKey.OP_WRITE error.", e);
                         connect();
                     }
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "loop run: 阻塞队列出错。", e);
                 }
-            } catch (InterruptedException e) {
-                Log.e(TAG, "loop run: 阻塞队列出错。", e);
             }
         }
 
