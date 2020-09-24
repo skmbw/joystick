@@ -426,10 +426,10 @@ public class MainActivity extends AppCompatActivity {
                 speed = BigDecimalUtils.add(mSpeed, mBaseSpeed); // 减少一个基点的速度
             }
 
-            if (turnDiff > 0D) { // 加速转弯
-                if (mTurnSpeed >= 0) { // 第二象限
+            if (turnDiff > 0D) {
+                if (mTurnSpeed >= 0) { // 第三象限
                     turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
-                } else { // -0.5 - (-0.3) // 第一象限
+                } else { // 第四象限
                     turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
                 }
             } else if (turnDiff < 0D) { // 减速转弯
