@@ -428,12 +428,8 @@ public class MainActivity extends AppCompatActivity {
 
             if (turnDiff > 0D) { // 从第四象限向第三象限转
                 turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
-            } else if (turnDiff < 0D) { // 减速转弯
-                if (mTurnSpeed >= 0) { // 第二象限
-                    turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
-                } else { // 第一象限
-                    turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
-                }
+            } else if (turnDiff < 0D) { // 从第三象限向第四象限转
+                turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
             }
         }
 
