@@ -250,8 +250,8 @@ public class MainActivity extends AppCompatActivity {
                 // 注册连接事件
                 mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                 // 发起连接
-                mSocketChannel.connect(new InetSocketAddress("10.1.163.96", 9090));
-//                mSocketChannel.connect(new InetSocketAddress("10.1.101.31", 9090));
+//                mSocketChannel.connect(new InetSocketAddress("10.1.163.96", 9090));
+                mSocketChannel.connect(new InetSocketAddress("10.1.101.31", 9090));
             } catch (Exception e) {
                 Log.e(TAG, "connect: error", e);
             }
@@ -362,12 +362,12 @@ public class MainActivity extends AppCompatActivity {
                             runOnUiThread(() -> {
                                 Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                             });
-                            connect();
+//                            connect();
                         }
 //                    } catch (ClosedChannelException e) {
                     } catch (IOException e) {
                         Log.e(TAG, "loop run: register SelectionKey.OP_WRITE error.", e);
-                        connect();
+//                        connect();
                     }
                 } catch (InterruptedException e) {
                     Log.e(TAG, "loop run: 阻塞队列出错。", e);
