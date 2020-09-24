@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView mLeftWheel;
     private TextView mRightWheel;
     private Handler mHandler;
-
+    private StartLoopEventHandler startLoopEventHandler;
     private RobotTeleopTask mTeleopTask;
 
     @Override
@@ -78,11 +78,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mHandler = new UpdateViewHandler(this);
+        startLoopEventHandler = new StartLoopEventHandler(this);
 
         // 启动通信任务
         Thread thread = new Thread(() -> {
             mTeleopTask = new RobotTeleopTask();
-            // mTeleopTask.run(); // SocketChannel可能还没有连接成功。
+            mTeleopTask.startSocketService();
         });
         thread.start();
 
@@ -132,8 +133,14 @@ public class MainActivity extends AppCompatActivity {
                 mHandler.sendMessage(msg);
 
                 // 发送最后一个指令，停止运动
-                ByteBuffer byteBuffer = createMessageContent(0, 0);
-                mTeleopTask.sendMessage(byteBuffer);
+                // 这里发送指令，仍然是在主线程执行
+//                ByteBuffer byteBuffer = createMessageContent(0, 0);
+//                mTeleopTask.sendMessage(byteBuffer);
+                try {
+                    mBlockingDeque.put(new Double[]{0D, 0D});
+                } catch (InterruptedException e) {
+                    Log.i(TAG, "onReset: stop the robot InterruptedException.");
+                }
             }
 
             @Override
@@ -214,8 +221,11 @@ public class MainActivity extends AppCompatActivity {
         private Selector mSelector;
 
         public RobotTeleopTask() {
+        }
+
+        public void startSocketService() {
             // 新启动线程，否则socket会阻塞
-            Thread thread = new Thread(this::startSocket);
+            Thread thread = new Thread(this::selectorLoop);
             thread.start();
         }
 
@@ -235,7 +245,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        private void startSocket() {
+        private void selectorLoop() {
+            // socket connect
             connect();
             // 轮询处理所有注册的监听事件
             while (true) {
@@ -258,9 +269,11 @@ public class MainActivity extends AppCompatActivity {
                                 while (!mSocketChannel.finishConnect()) {
                                     Log.d(TAG, "startRosService: SocketChannel finishConnect...");
                                 }
-                                Thread thread = new Thread(this::runLoop);
                                 // OutOfMemoryError: Could not allocate JNI Env
-                                thread.start();
+                                // Thread thread = new Thread(this::runLoop);
+                                // thread.start();
+                                Message msg = startLoopEventHandler.obtainMessage(1);
+                                msg.sendToTarget();
                             }
 
                             // 处理写事件，发送数据到服务端
@@ -293,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void runLoop() {
+        public void sendMessageLoop() {
             for (;;) {
                 try {
                     Double[] speeds = mBlockingDeque.take();
@@ -332,24 +345,24 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void sendMessage(ByteBuffer byteBuffer) {
-            try {
-                try {
-                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
-                } catch (NotYetConnectedException e) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-                    });
-                    connect();
-                }
-            } catch (ClosedChannelException e) {
-                Log.e(TAG, "sendMessage: register SelectionKey.OP_WRITE error.", e);
-                runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-                });
-                connect();
-            }
-        }
+//        public void sendMessage(ByteBuffer byteBuffer) {
+//            try {
+//                try {
+//                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+//                } catch (NotYetConnectedException e) {
+//                    runOnUiThread(() -> {
+//                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
+//                    });
+//                    connect();
+//                }
+//            } catch (ClosedChannelException e) {
+//                Log.e(TAG, "sendMessage: register SelectionKey.OP_WRITE error.", e);
+//                runOnUiThread(() -> {
+//                    Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
+//                });
+//                connect();
+//            }
+//        }
     }
 
     /**
@@ -421,5 +434,28 @@ public class MainActivity extends AppCompatActivity {
                     activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
             }
         }
+    }
+
+    private static class StartLoopEventHandler extends Handler {
+        private volatile boolean init = false;
+        private WeakReference<MainActivity> mReference;
+        public StartLoopEventHandler(MainActivity activity) {
+            this.mReference = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 1:
+                    if (!init) {
+                        init = true;
+                        MainActivity activity = mReference.get();
+                        Thread thread = new Thread(() -> {
+                            activity.mTeleopTask.sendMessageLoop();
+                        });
+                    }
+            }
+        }
+
     }
 }
