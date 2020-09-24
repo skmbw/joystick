@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         // 启动通信任务
         Thread thread = new Thread(() -> {
             mTeleopTask = new RobotTeleopTask();
-            mTeleopTask.run();
+            // mTeleopTask.run(); // SocketChannel可能还没有连接成功。
         });
         thread.start();
 
@@ -247,13 +247,14 @@ public class MainActivity extends AppCompatActivity {
                                 while (!mSocketChannel.finishConnect()) {
                                     Log.d(TAG, "startRosService: SocketChannel finishConnect...");
                                 }
+                                Thread thread = new Thread(this::runLoop);
+                                thread.start();
                             }
 
                             // 处理写事件，发送数据到服务端
                             if (key.isWritable()) {
                                 Log.i(TAG, "startRosService: SocketChannel.write message.");
                                 mSocketChannel.write((ByteBuffer) key.attachment());
-//                                mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                             }
                             // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
                             if (key.isReadable()) {
@@ -273,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void run() {
+        public void runLoop() {
             try {
                 for (;;) {
                     Double[] speeds = mBlockingDeque.take();
