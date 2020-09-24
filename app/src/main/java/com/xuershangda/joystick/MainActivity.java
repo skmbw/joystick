@@ -113,8 +113,9 @@ public class MainActivity extends AppCompatActivity {
                 Double linearSpeed = speeds[0];
                 Double angularSpeed = speeds[1];
 
-                if (Math.abs(BigDecimalUtils.subtract(linearSpeed, mSpeed)) <= 0.02
-                        && Math.abs(BigDecimalUtils.subtract(angularSpeed, mTurnSpeed)) <= 0.02) {
+                // 起步速度太大，连续发送多个指令，不好控制，减少指令的数量
+                if (Math.abs(BigDecimalUtils.subtract(linearSpeed, mSpeed)) <= 0.1
+                        && Math.abs(BigDecimalUtils.subtract(angularSpeed, mTurnSpeed)) <= 0.1) {
                     Log.d(TAG, "onTouch: 速度变化太小，忽略。mSpeed=" + mSpeed + ", mTurnSpeed="
                             + mTurnSpeed + ", linearSpeed=" + linearSpeed + ", angularSpeed=" + angularSpeed);
                     return;
