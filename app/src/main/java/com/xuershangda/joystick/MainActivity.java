@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
                         while (iterator.hasNext()) {
                             SelectionKey key = iterator.next();
 
-                            // 连接
+                            // 连接成功后，启动发送消息线程
                             if (key.isConnectable()) {
                                 // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
                                 while (!mSocketChannel.finishConnect()) {
@@ -295,6 +295,7 @@ public class MainActivity extends AppCompatActivity {
 //                                    while (byteBuffer.hasRemaining()) {
 //                                        mSocketChannel.write(byteBuffer);
 //                                    }
+//                                    // key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
 //                                } catch (NotYetConnectedException e) {
 //                                    runOnUiThread(() -> {
 //                                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
@@ -344,7 +345,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         try {
                             mSocketChannel.write(byteBuffer);
-//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
+//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
                         } catch (NotYetConnectedException e) {
                             runOnUiThread(() -> {
                                 Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
