@@ -355,19 +355,13 @@ public class MainActivity extends AppCompatActivity {
 
                     ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
                     try {
-                        try {
-                            mSocketChannel.write(byteBuffer);
-//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
-                        } catch (NotYetConnectedException e) {
-                            runOnUiThread(() -> {
-                                Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-                            });
-//                            connect();
-                        }
-//                    } catch (ClosedChannelException e) {
-                    } catch (IOException e) {
-                        Log.e(TAG, "loop run: register SelectionKey.OP_WRITE error.", e);
-//                        connect();
+                        mSocketChannel.write(byteBuffer);
+                    } catch (IOException | NotYetConnectedException e) {
+                        Log.e(TAG, "send message error.", e);
+                        connect();
+                        runOnUiThread(() -> {
+                            Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
+                        });
                     }
                 } catch (InterruptedException e) {
                     Log.e(TAG, "loop run: 阻塞队列出错。", e);
