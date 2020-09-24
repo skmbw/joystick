@@ -341,6 +341,16 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mSpeed));
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
+
+                        String direct;
+                        if (mTurnSpeed > 0) {
+                            direct = "左转";
+                        } else if (mTurnSpeed < 0) {
+                            direct = "右转";
+                        } else {
+                            direct = "直行";
+                        }
+                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
                     });
 
                     ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
@@ -398,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
             direct = "停止";
         }
 
-        runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
+//        runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
 
         speeds[0] = speed;
         speeds[1] = turn;
