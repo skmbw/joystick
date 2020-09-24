@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.NoConnectionPendingException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -314,7 +315,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.i(TAG, "SocketChannel.isOpen is false.");
                         break;
                     }
-                } catch (IOException e) {
+                } catch (IOException | NoConnectionPendingException e) {
                     Log.e(TAG, "Server error. " + e.getMessage());
                     connect();
                     Log.e(TAG, "Will reconnect. ");
