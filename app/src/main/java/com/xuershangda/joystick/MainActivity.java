@@ -25,7 +25,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -220,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
             thread.start();
         }
 
-        private void startSocket() {
+        private void connect() {
             try {
                 // 初始化客户端
                 mSocketChannel = SocketChannel.open();
@@ -231,6 +230,14 @@ public class MainActivity extends AppCompatActivity {
                 // 发起连接
 //                mSocketChannel.connect(new InetSocketAddress("10.1.205.126", 9090));
                 mSocketChannel.connect(new InetSocketAddress("10.1.101.31", 9090));
+            } catch (Exception e) {
+                Log.e(TAG, "connect: error", e);
+            }
+        }
+
+        private void startSocket() {
+            try {
+                connect();
                 // 轮询处理所有注册的监听事件
                 while (true) {
                     if (mSocketChannel.isOpen()) {
@@ -240,8 +247,7 @@ public class MainActivity extends AppCompatActivity {
                             continue;
                         }
                         // 获取当前事件集
-                        Set<SelectionKey> keys = mSelector.selectedKeys();
-                        Iterator<SelectionKey> iterator = keys.iterator();
+                        Iterator<SelectionKey> iterator = mSelector.selectedKeys().iterator();
                         // 处理准备就绪的事件
                         while (iterator.hasNext()) {
                             SelectionKey key = iterator.next();
@@ -265,6 +271,7 @@ public class MainActivity extends AppCompatActivity {
                                     runOnUiThread(() -> {
                                         Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                                     });
+                                    mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                                 }
                             }
                             // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
@@ -312,6 +319,7 @@ public class MainActivity extends AppCompatActivity {
                             runOnUiThread(() -> {
                                 Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                             });
+                            mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                         }
                     } catch (ClosedChannelException e) {
                         Log.e(TAG, "loop run: register SelectionKey.OP_WRITE error.", e);
@@ -330,12 +338,14 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                     });
+                    mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                 }
             } catch (ClosedChannelException e) {
                 Log.e(TAG, "sendMessage: register SelectionKey.OP_WRITE error.", e);
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                 });
+                connect();
             }
         }
     }
