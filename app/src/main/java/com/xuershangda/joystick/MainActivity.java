@@ -271,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
                                     runOnUiThread(() -> {
                                         Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                                     });
-                                    mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
+                                    connect();
                                 }
                             }
                             // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
@@ -283,10 +283,10 @@ public class MainActivity extends AppCompatActivity {
                         }
                     } else {
                         Log.i(TAG, "startSocket: SocketChannel.isOpen is false.");
+                        connect();
                         break;
                     }
                 }
-
             } catch (IOException e) {
                 Log.e(TAG, "server error. " + e.getMessage());
             }
@@ -319,10 +319,11 @@ public class MainActivity extends AppCompatActivity {
                             runOnUiThread(() -> {
                                 Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                             });
-                            mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
+                            connect();
                         }
                     } catch (ClosedChannelException e) {
                         Log.e(TAG, "loop run: register SelectionKey.OP_WRITE error.", e);
+                        connect();
                     }
                 }
             } catch (InterruptedException e) {
@@ -338,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                     });
-                    mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
+                    connect();
                 }
             } catch (ClosedChannelException e) {
                 Log.e(TAG, "sendMessage: register SelectionKey.OP_WRITE error.", e);
