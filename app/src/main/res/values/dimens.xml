@@ -4,7 +4,7 @@
     <dimen name="ui_joystick_bottom_margin">50dp</dimen>
 
     <!-- 控制盘的大小 -->
-    <dimen name="ui_joystick_pad_size">360dp</dimen>
+    <dimen name="ui_joystick_pad_size">380dp</dimen>
 
     <!-- 背景圆的半径 -->
     <dimen name="ui_joystick_round_bg_radius">160dp</dimen>
