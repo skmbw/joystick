@@ -25,6 +25,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -258,7 +259,8 @@ public class MainActivity extends AppCompatActivity {
                             continue;
                         }
                         // 获取当前事件集
-                        Iterator<SelectionKey> iterator = mSelector.selectedKeys().iterator();
+                        Set<SelectionKey> keySet = mSelector.selectedKeys();
+                        Iterator<SelectionKey> iterator = keySet.iterator();
                         // 处理准备就绪的事件
                         while (iterator.hasNext()) {
                             SelectionKey key = iterator.next();
@@ -284,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
                                     while (byteBuffer.hasRemaining()) {
                                         mSocketChannel.write(byteBuffer);
                                     }
-                                    byteBuffer.flip();
+//                                    key.cancel();
                                 } catch (NotYetConnectedException e) {
                                     runOnUiThread(() -> {
                                         Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
@@ -349,25 +351,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-
-//        public void sendMessage(ByteBuffer byteBuffer) {
-//            try {
-//                try {
-//                    mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
-//                } catch (NotYetConnectedException e) {
-//                    runOnUiThread(() -> {
-//                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-//                    });
-//                    connect();
-//                }
-//            } catch (ClosedChannelException e) {
-//                Log.e(TAG, "sendMessage: register SelectionKey.OP_WRITE error.", e);
-//                runOnUiThread(() -> {
-//                    Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-//                });
-//                connect();
-//            }
-//        }
     }
 
     /**
