@@ -453,6 +453,7 @@ public class MainActivity extends AppCompatActivity {
                         Thread thread = new Thread(() -> {
                             activity.mTeleopTask.sendMessageLoop();
                         });
+                        thread.start();
                     }
             }
         }
