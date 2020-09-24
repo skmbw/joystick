@@ -108,17 +108,17 @@ public class MainActivity extends AppCompatActivity {
         defaultController.setRightTouchViewListener(new JoystickTouchViewListener() {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
+                // 起步速度太大，连续发送多个指令，不好控制，减少指令的数量
+                if (Math.abs(BigDecimalUtils.subtract((double) horizontalPercent, mSpeed)) < 0.05D
+                        && Math.abs(BigDecimalUtils.subtract((double) verticalPercent, mTurnSpeed)) <= 0.08D) {
+                    Log.d(TAG, "onTouch: 速度变化太小，忽略。");
+                    return;
+                }
+
 //                Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
                 Double[] speeds = computeSpeed(horizontalPercent, verticalPercent);
                 Double linearSpeed = speeds[0];
                 Double angularSpeed = speeds[1];
-
-                // 起步速度太大，连续发送多个指令，不好控制，减少指令的数量
-                if (Math.abs(BigDecimalUtils.subtract(linearSpeed, mSpeed)) < 0.05D
-                        && Math.abs(BigDecimalUtils.subtract(angularSpeed, mTurnSpeed)) <= 0.08D) {
-                    Log.d(TAG, "onTouch: 速度变化太小，忽略。");
-                    return;
-                }
 
                 try {
                     Log.d(TAG, "onTouch: mSpeed=" + mSpeed + ", mTurnSpeed="
