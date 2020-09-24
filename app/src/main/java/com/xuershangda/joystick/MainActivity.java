@@ -38,6 +38,8 @@ import edu.wpi.rail.jrosbridge.messages.geometry.Vector3;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
+    private Double mBaseSpeed = 0.05D;
+    private Double mBaseTurn = 0.1D;
     private Double mSpeed = 0D;
     private Double mTurnSpeed = 0D;
     private BlockingDeque<Double[]> mBlockingDeque;
@@ -109,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
                 // 起步速度太大，连续发送多个指令，不好控制，减少指令的数量
-                if (Math.abs(BigDecimalUtils.subtract((double) horizontalPercent, mSpeed)) < 0.05D
+                if (Math.abs(BigDecimalUtils.subtract((double) horizontalPercent, mSpeed)) < mBaseSpeed
                         && Math.abs(BigDecimalUtils.subtract((double) verticalPercent, mTurnSpeed)) <= 0.08D) {
                     Log.d(TAG, "onTouch: 速度变化太小，忽略。");
                     return;
@@ -387,18 +389,56 @@ public class MainActivity extends AppCompatActivity {
 
         double speed = y; // 速度，负数时后退
         double turn = -x; // 方向，坐标系是相反的
-        String direct;
-        if (y > 0) {
-            direct = mapTurn(turn);
-        } else if (y < 0) {
+//        String direct;
+        double speedDiff = BigDecimalUtils.subtract(speed, mSpeed);
+        double turnDiff = BigDecimalUtils.subtract(turn, mTurnSpeed);
+        if (y > 0) { // 前进
+            if (speedDiff > 0D) { // 在加速
+                speed = BigDecimalUtils.add(mSpeed, mBaseSpeed); // 增加一个基点的速度
+            } else if (speedDiff < 0D) { // 在减速
+                speed = BigDecimalUtils.subtract(mSpeed, mBaseSpeed); // 减少一个基点的速度
+            }
+
+            if (turnDiff > 0D) { // 加速转弯
+                if (mTurnSpeed >= 0) { // 第二象限
+                    turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
+                } else { // -0.5 - (-0.3) // 第一象限
+                    turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
+                }
+            } else if (turnDiff < 0D) { // 减速转弯
+                if (mTurnSpeed >= 0) { // 第二象限
+                    turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
+                } else { // 第一象限
+                    turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
+                }
+            }
+//            direct = mapTurn(turn);
+        } else if (y < 0) { // 后退
 //            // 每次速度降低0.1
 //            speed = BigDecimalUtils.round(mSpeed * 0.9, 2);
 //            if (speed <= 0D) {
 //                speed = 0D;
 //            }
-            direct = mapTurn(turn);
-        } else {
-            direct = "停止";
+//            direct = mapTurn(turn);
+            if (speedDiff < 0D) { // 在加速
+                speed = BigDecimalUtils.subtract(mSpeed, mBaseSpeed); // 增加一个基点的速度
+            } else if (speedDiff > 0D) { // 在减速
+                speed = BigDecimalUtils.add(mSpeed, mBaseSpeed); // 减少一个基点的速度
+            }
+
+            if (turnDiff > 0D) { // 加速转弯
+                if (mTurnSpeed >= 0) { // 第二象限
+                    turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
+                } else { // -0.5 - (-0.3) // 第一象限
+                    turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
+                }
+            } else if (turnDiff < 0D) { // 减速转弯
+                if (mTurnSpeed >= 0) { // 第二象限
+                    turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
+                } else { // 第一象限
+                    turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
+                }
+            }
         }
 
 //        runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
