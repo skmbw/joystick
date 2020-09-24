@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -70,11 +69,21 @@ public class MainActivity extends AppCompatActivity {
             if (mSpeed > 2D) {
                 mSpeed = 2D;
             }
+            try {
+                mBlockingDeque.put(new Double[]{mSpeed, mTurnSpeed});
+            } catch (InterruptedException e) {
+                Log.i(TAG, "Speed Up the robot InterruptedException.");
+            }
         });
         speedDown.setOnClickListener(view -> {
             mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1);
             if (mSpeed < 0) {
                 mSpeed = 0D;
+            }
+            try {
+                mBlockingDeque.put(new Double[]{mSpeed, mTurnSpeed});
+            } catch (InterruptedException e) {
+                Log.i(TAG, "Speed Down the robot InterruptedException.");
             }
         });
 
@@ -278,26 +287,25 @@ public class MainActivity extends AppCompatActivity {
                                 msg.sendToTarget();
                             }
 
-                            // 处理写事件，发送数据到服务端
-                            if (key.isWritable()) {
-                                Log.i(TAG, "startRosService: SocketChannel.write message.");
-                                try {
-                                    ByteBuffer byteBuffer = (ByteBuffer) key.attachment();
-                                    while (byteBuffer.hasRemaining()) {
-                                        mSocketChannel.write(byteBuffer);
-                                    }
-//                                    key.cancel();
-                                } catch (NotYetConnectedException e) {
-                                    runOnUiThread(() -> {
-                                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-                                    });
-                                    connect();
-                                }
-                            }
-                            // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
-                            if (key.isReadable()) {
-                                Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
-                            }
+//                            // 处理写事件，发送数据到服务端
+//                            if (key.isWritable()) {
+//                                Log.i(TAG, "startRosService: SocketChannel.write message.");
+//                                try {
+//                                    ByteBuffer byteBuffer = (ByteBuffer) key.attachment();
+//                                    while (byteBuffer.hasRemaining()) {
+//                                        mSocketChannel.write(byteBuffer);
+//                                    }
+//                                } catch (NotYetConnectedException e) {
+//                                    runOnUiThread(() -> {
+//                                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
+//                                    });
+//                                    connect();
+//                                }
+//                            }
+//                            // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
+//                            if (key.isReadable()) {
+//                                Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
+//                            }
                             // 删除当前键，避免重复消费
                             iterator.remove();
                         }
@@ -335,14 +343,16 @@ public class MainActivity extends AppCompatActivity {
                     ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
                     try {
                         try {
-                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE, byteBuffer);
+                            mSocketChannel.write(byteBuffer);
+//                            mSocketChannel.register(mSelector, SelectionKey.OP_WRITE);
                         } catch (NotYetConnectedException e) {
                             runOnUiThread(() -> {
                                 Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
                             });
                             connect();
                         }
-                    } catch (ClosedChannelException e) {
+//                    } catch (ClosedChannelException e) {
+                    } catch (IOException e) {
                         Log.e(TAG, "loop run: register SelectionKey.OP_WRITE error.", e);
                         connect();
                     }
