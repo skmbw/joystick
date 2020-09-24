@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         defaultController.setRightTouchViewListener(new JoystickTouchViewListener() {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
-                Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
+//                Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
                 Double[] speeds = computeSpeed(horizontalPercent, verticalPercent);
                 Double linearSpeed = speeds[0];
                 Double angularSpeed = speeds[1];
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                     mTurnSpeed = angularSpeed;
                     Log.d(TAG, "onTouch: 插入控制命令到队列成功。");
                     mBlockingDeque.put(speeds);
-                    Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
+//                    Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
                 } catch (Exception e) {
                     Log.e(TAG, "onTouch: 产生任务错误。", e);
                 }
@@ -280,7 +280,11 @@ public class MainActivity extends AppCompatActivity {
                             if (key.isWritable()) {
                                 Log.i(TAG, "startRosService: SocketChannel.write message.");
                                 try {
-                                    mSocketChannel.write((ByteBuffer) key.attachment());
+                                    ByteBuffer byteBuffer = (ByteBuffer) key.attachment();
+                                    while (byteBuffer.hasRemaining()) {
+                                        mSocketChannel.write(byteBuffer);
+                                    }
+                                    byteBuffer.flip();
                                 } catch (NotYetConnectedException e) {
                                     runOnUiThread(() -> {
                                         Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
@@ -300,8 +304,9 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     }
                 } catch (IOException e) {
-                    Log.e(TAG, "server error. " + e.getMessage());
+                    Log.e(TAG, "Server error. " + e.getMessage());
                     connect();
+                    Log.e(TAG, "Will reconnect. ");
                 }
             }
         }
@@ -315,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
 
                     Double leftSpeed = speeds[0];
                     Double rightSpeed = speeds[1];
-                    Log.d(TAG, "onTouch: WheelSpeed=" + leftSpeed + ", AngularSpeed=" + rightSpeed);
+//                    Log.d(TAG, "onTouch: WheelSpeed=" + leftSpeed + ", AngularSpeed=" + rightSpeed);
 
                     // 记录上一次的速度
                     mSpeed = leftSpeed;
