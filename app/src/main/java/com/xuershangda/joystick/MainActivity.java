@@ -249,8 +249,8 @@ public class MainActivity extends AppCompatActivity {
                 // 注册连接事件
                 mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                 // 发起连接
-//                mSocketChannel.connect(new InetSocketAddress("10.1.205.126", 9090));
-                mSocketChannel.connect(new InetSocketAddress("10.1.101.31", 9090));
+                mSocketChannel.connect(new InetSocketAddress("10.1.163.96", 9090));
+//                mSocketChannel.connect(new InetSocketAddress("10.1.101.31", 9090));
             } catch (Exception e) {
                 Log.e(TAG, "connect: error", e);
             }
