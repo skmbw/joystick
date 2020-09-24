@@ -378,21 +378,21 @@ public class MainActivity extends AppCompatActivity {
     private Double[] computeSpeed(double hx, double vy) {
         // 映射到角速度，控制方向，感觉这个值，不需要做转换，非常完美啊
         double x = BigDecimalUtils.round(hx, 2);
-        // 映射到线速度，控制速度，需要处理负值
+        // 映射到线速度，控制速度
         double y = BigDecimalUtils.round(vy, 2);
         Double[] speeds = new Double[2];
 
-        double speed = y; // 速度
+        double speed = y; // 速度，负数时后退
         double turn = -x; // 方向，坐标系是相反的
         String direct;
         if (y > 0) {
             direct = mapTurn(turn);
         } else if (y < 0) {
-            // 每次速度降低0.1
-            speed = BigDecimalUtils.round(mSpeed * 0.9, 2);
-            if (speed <= 0D) {
-                speed = 0D;
-            }
+//            // 每次速度降低0.1
+//            speed = BigDecimalUtils.round(mSpeed * 0.9, 2);
+//            if (speed <= 0D) {
+//                speed = 0D;
+//            }
             direct = mapTurn(turn);
         } else {
             direct = "停止";
