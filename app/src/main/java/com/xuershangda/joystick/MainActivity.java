@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                             if (key.isConnectable()) {
                                 // 在非阻塞模式下connect也是非阻塞的，所以要确保连接已经建立完成
                                 while (!mSocketChannel.finishConnect()) {
-                                    Log.d(TAG, "startRosService: SocketChannel finishConnect...");
+                                    Log.d(TAG, "SocketChannel finishConnect...");
                                 }
                                 // OutOfMemoryError: Could not allocate JNI Env
                                 // Thread thread = new Thread(this::runLoop);
@@ -311,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
                             iterator.remove();
                         }
                     } else {
-                        Log.i(TAG, "startSocket: SocketChannel.isOpen is false.");
+                        Log.i(TAG, "SocketChannel.isOpen is false.");
                         break;
                     }
                 } catch (IOException e) {
