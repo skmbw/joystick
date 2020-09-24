@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView mDirectView;
     private TextView mLeftWheel;
     private TextView mRightWheel;
-    private Handler mHandler;
+//    private Handler mHandler;
     private StartLoopEventHandler startLoopEventHandler;
     private RobotTeleopTask mTeleopTask;
 
@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mHandler = new UpdateViewHandler(this);
+//        mHandler = new UpdateViewHandler(this);
         startLoopEventHandler = new StartLoopEventHandler(this);
 
         // 启动通信任务
@@ -141,8 +141,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
                 mBlockingDeque.clear(); // 清空队列中的指令，没有发送完全的都不需要了
 
-                Message msg = mHandler.obtainMessage(1);
-                mHandler.sendMessage(msg);
+//                Message msg = mHandler.obtainMessage(1);
+//                mHandler.sendMessage(msg);
 
                 // 发送最后一个指令，停止运动
                 // 这里发送指令，仍然是在主线程执行
@@ -417,25 +417,25 @@ public class MainActivity extends AppCompatActivity {
         return direct;
     }
 
-    private static class UpdateViewHandler extends Handler {
-
-        private WeakReference<MainActivity> mReference;
-
-        UpdateViewHandler(MainActivity activity) {
-            this.mReference = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case 1:
-                    MainActivity activity = mReference.get();
-                    activity.mDirectView.setText(String.format("%s%s", activity.getString(R.string.direction), "停止"));
-                    activity.mLeftWheel.setText(String.format("%s%s", activity.getString(R.string.leftWheel), 0));
-                    activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
-            }
-        }
-    }
+//    private static class UpdateViewHandler extends Handler {
+//
+//        private WeakReference<MainActivity> mReference;
+//
+//        UpdateViewHandler(MainActivity activity) {
+//            this.mReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void handleMessage(Message msg) {
+//            switch (msg.what) {
+//                case 1:
+//                    MainActivity activity = mReference.get();
+//                    activity.mDirectView.setText(String.format("%s%s", activity.getString(R.string.direction), "停止"));
+//                    activity.mLeftWheel.setText(String.format("%s%s", activity.getString(R.string.leftWheel), 0));
+//                    activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
+//            }
+//        }
+//    }
 
     private static class StartLoopEventHandler extends Handler {
         private volatile boolean init = false;
