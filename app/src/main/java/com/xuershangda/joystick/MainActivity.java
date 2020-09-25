@@ -26,10 +26,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private Double mBaseTurn = 0.1D;
     private Double mSpeed = 0D;
     private Double mTurnSpeed = 0D;
-    private BlockingDeque<Double[]> mBlockingDeque;
+    private BlockingQueue<Double[]> mBlockingDeque;
     private TextView mDirectView;
     private TextView mLeftWheel;
     private TextView mRightWheel;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
             actionBar.hide();
         }
 
-        mBlockingDeque = new LinkedBlockingDeque<>();
+        mBlockingDeque = new SynchronousQueue<>();
         mDirectView = findViewById(R.id.direction);
         Button speedUp = findViewById(R.id.speedUp);
         Button speedDown = findViewById(R.id.speedDown);
@@ -363,6 +363,11 @@ public class MainActivity extends AppCompatActivity {
                 // 停止状态
                 if (mStop.compareAndSet(4, 4)) {
                     return;
+                }
+                Double[] queueSpeeds = mBlockingDeque.poll();
+                if (queueSpeeds != null) {
+                    mSpeed = queueSpeeds[0];
+                    mTurnSpeed = queueSpeeds[1];
                 }
                 runOnUiThread(() -> {
                     String direct = getDirect(mSpeed, mTurnSpeed);
