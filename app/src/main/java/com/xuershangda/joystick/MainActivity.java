@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
             public void onTouch(float horizontalPercent, float verticalPercent) {
                 // 起步速度太大，连续发送多个指令，不好控制，减少指令的数量
                 if (Math.abs(BigDecimalUtils.subtract((double) horizontalPercent, mSpeed)) < mBaseSpeed
-                        && Math.abs(BigDecimalUtils.subtract((double) verticalPercent, mTurnSpeed)) <= 0.08D) {
+                        && Math.abs(BigDecimalUtils.subtract((double) verticalPercent, mTurnSpeed)) < mBaseTurn) {
                     Log.d(TAG, "onTouch: 速度变化太小，忽略。");
                     return;
                 }
