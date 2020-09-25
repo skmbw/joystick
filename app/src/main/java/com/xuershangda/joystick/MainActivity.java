@@ -389,7 +389,6 @@ public class MainActivity extends AppCompatActivity {
 
         double speed = y; // 速度，负数时后退
         double turn = -x; // 方向，坐标系是相反的
-//        String direct;
         double speedDiff = BigDecimalUtils.subtract(speed, mSpeed);
         double turnDiff = BigDecimalUtils.subtract(turn, mTurnSpeed);
         if (y > 0) { // 前进
@@ -412,14 +411,7 @@ public class MainActivity extends AppCompatActivity {
                     turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
                 }
             }
-//            direct = mapTurn(turn);
         } else if (y < 0) { // 后退
-//            // 每次速度降低0.1
-//            speed = BigDecimalUtils.round(mSpeed * 0.9, 2);
-//            if (speed <= 0D) {
-//                speed = 0D;
-//            }
-//            direct = mapTurn(turn);
             if (speedDiff < 0D) { // 在加速
                 speed = BigDecimalUtils.subtract(mSpeed, mBaseSpeed); // 增加一个基点的速度
             } else if (speedDiff > 0D) { // 在减速
@@ -433,44 +425,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-//        runOnUiThread(() -> mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct)));
-
         speeds[0] = speed;
         speeds[1] = turn;
         return speeds;
     }
-
-    private String mapTurn(double turn) {
-        String direct;
-        if (turn > 0) {
-            direct = "左转";
-        } else if (turn < 0) {
-            direct = "右转";
-        } else {
-            direct = "直行";
-        }
-        return direct;
-    }
-
-//    private static class UpdateViewHandler extends Handler {
-//
-//        private WeakReference<MainActivity> mReference;
-//
-//        UpdateViewHandler(MainActivity activity) {
-//            this.mReference = new WeakReference<>(activity);
-//        }
-//
-//        @Override
-//        public void handleMessage(Message msg) {
-//            switch (msg.what) {
-//                case 1:
-//                    MainActivity activity = mReference.get();
-//                    activity.mDirectView.setText(String.format("%s%s", activity.getString(R.string.direction), "停止"));
-//                    activity.mLeftWheel.setText(String.format("%s%s", activity.getString(R.string.leftWheel), 0));
-//                    activity.mRightWheel.setText(String.format("%s%s", activity.getString(R.string.rightWheel), 0));
-//            }
-//        }
-//    }
 
     private static class StartLoopEventHandler extends Handler {
         private volatile boolean init = false;
