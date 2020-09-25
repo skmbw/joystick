@@ -340,20 +340,20 @@ public class MainActivity extends AppCompatActivity {
                     mSpeed = leftSpeed;
                     mTurnSpeed = rightSpeed;
                     // 可以换个地方
-//                    runOnUiThread(() -> {
-//                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mSpeed));
-//                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
-//
-//                        String direct;
-//                        if (mTurnSpeed > 0) {
-//                            direct = "左转";
-//                        } else if (mTurnSpeed < 0) {
-//                            direct = "右转";
-//                        } else {
-//                            direct = "直行";
-//                        }
-//                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
-//                    });
+                    runOnUiThread(() -> {
+                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), leftSpeed));
+                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), rightSpeed));
+
+                        String direct;
+                        if (rightSpeed > 0) {
+                            direct = "左转";
+                        } else if (rightSpeed < 0) {
+                            direct = "右转";
+                        } else {
+                            direct = "直行";
+                        }
+                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
+                    });
 
                     ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
                     try {
@@ -420,21 +420,6 @@ public class MainActivity extends AppCompatActivity {
 
         speeds[0] = speed;
         speeds[1] = turn;
-
-        runOnUiThread(() -> {
-            mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), speeds[0]));
-            mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), speeds[1]));
-
-            String direct;
-            if (mTurnSpeed > 0) {
-                direct = "左转";
-            } else if (mTurnSpeed < 0) {
-                direct = "右转";
-            } else {
-                direct = "直行";
-            }
-            mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
-        });
 
         return speeds;
     }
