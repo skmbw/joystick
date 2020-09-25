@@ -4,11 +4,20 @@ import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 速度指令，携带该指令的时间，超时的指令抛弃。
+ * 速度指令，携带该指令的时间，超时的指令抛弃（结合延时队列）。
  */
 public class SpeedModel implements Delayed {
+    /**
+     * 该条指令发出的时间，或者是未来的某一时刻的时间
+     */
     private long time;
+    /**
+     * 线速度
+     */
     private double linear;
+    /**
+     * 角速度
+     */
     private double angular;
 
     public String getDirect() {
@@ -61,12 +70,12 @@ public class SpeedModel implements Delayed {
     /**
      * 返回0或者负值，表示对象已经到期了
      *
-     * @param unit
-     * @return
+     * @param unit TimeUnit.NANOSECONDS
+     * @return 延迟是否到期
      */
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(time - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        return unit.convert(time - System.nanoTime(), TimeUnit.NANOSECONDS);
     }
 
     @Override
