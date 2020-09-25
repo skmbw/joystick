@@ -27,7 +27,11 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -47,8 +51,11 @@ public class MainActivity extends AppCompatActivity {
     private TextView mLeftWheel;
     private TextView mRightWheel;
 //    private Handler mHandler;
-    private StartLoopEventHandler startLoopEventHandler;
+    private StartLoopEventHandler mStartLoopEventHandler;
     private RobotTeleopTask mTeleopTask;
+
+    private ScheduledExecutorService mScheduler;
+    private volatile AtomicInteger mStop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 //        mHandler = new UpdateViewHandler(this);
-        startLoopEventHandler = new StartLoopEventHandler(this);
+        mStartLoopEventHandler = new StartLoopEventHandler(this);
 
         // 启动通信任务
         Thread thread = new Thread(() -> {
@@ -99,6 +106,9 @@ public class MainActivity extends AppCompatActivity {
             mTeleopTask.startSocketService();
         });
         thread.start();
+
+        mScheduler = Executors.newScheduledThreadPool(3);
+        mStop = new AtomicInteger(1);
 
         // 不能放在上面，因为view还没有初始化，肯定找不到这个布局
         RelativeLayout viewGroup = findViewById(R.id.joyStickView);
@@ -110,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
         defaultController.setRightTouchViewListener(new JoystickTouchViewListener() {
             @Override
             public void onTouch(float horizontalPercent, float verticalPercent) {
+                mStop.set(1);
+
                 // 起步速度太大，连续发送多个指令，不好控制，减少指令的数量
                 if (Math.abs(BigDecimalUtils.subtract((double) horizontalPercent, mSpeed)) < mBaseSpeed
                         && Math.abs(BigDecimalUtils.subtract((double) verticalPercent, mTurnSpeed)) < mBaseTurn) {
@@ -128,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
                     mSpeed = linearSpeed;
                     mTurnSpeed = angularSpeed;
                     Log.d(TAG, "onTouch: 插入控制命令到队列成功。");
-                    mBlockingDeque.put(speeds);
+//                    mBlockingDeque.put(speeds);
 //                    Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
                 } catch (Exception e) {
                     Log.e(TAG, "onTouch: 产生任务错误。", e);
@@ -142,6 +154,10 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
                 mBlockingDeque.clear(); // 清空队列中的指令，没有发送完全的都不需要了
 
+                mSpeed = 0D;
+                mTurnSpeed = 0D;
+
+                mStop.set(2);
                 // 发送最后一个指令，停止运动
                 try {
                     mBlockingDeque.put(new Double[]{0D, 0D});
@@ -223,6 +239,29 @@ public class MainActivity extends AppCompatActivity {
         return ByteBuffer.wrap(contentBytes);
     }
 
+    public String getDirect(double linear, double angular) {
+        String direct = "直行";
+        if (linear >=0) {
+            // [-0.1, 0.1]都认为是直行
+            if (-0.1D <= angular && angular <=0.1D) {
+                direct = "直行";
+            } else if (angular > 0.1D) {
+                direct = "直行左转";
+            } else if (angular < -0.1D) {
+                direct = "直行右转";
+            }
+        } else {
+            if (-0.1D <= angular && angular <=0.1D) {
+                direct = "后退";
+            } else if (angular > 0.1D) {
+                direct = "后退左转";
+            } else if (angular < -0.1D) {
+                direct = "后退右转";
+            }
+        }
+        return direct;
+    }
+
     public class RobotTeleopTask {
         private SocketChannel mSocketChannel;
         private Selector mSelector;
@@ -280,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
                                 // OutOfMemoryError: Could not allocate JNI Env
                                 // Thread thread = new Thread(this::runLoop);
                                 // thread.start();
-                                Message msg = startLoopEventHandler.obtainMessage(1);
+                                Message msg = mStartLoopEventHandler.obtainMessage(1);
                                 msg.sendToTarget();
                             }
 
@@ -320,49 +359,83 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void sendMessageLoop() {
-            for (;;) {
-                try {
-                    Double[] speeds = mBlockingDeque.take();
-
-                    Log.d(TAG, "run: 从队列中获取控制命令成功。taskNumber=[" + mBlockingDeque.size() + "]");
-
-                    Double leftSpeed = speeds[0];
-                    Double rightSpeed = speeds[1];
-//                    Log.d(TAG, "onTouch: WheelSpeed=" + leftSpeed + ", AngularSpeed=" + rightSpeed);
-
-                    // 记录上一次的速度
-                    mSpeed = leftSpeed;
-                    mTurnSpeed = rightSpeed;
-                    // 可以换个地方
-                    runOnUiThread(() -> {
-                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), leftSpeed));
-                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), rightSpeed));
-
-                        String direct;
-                        if (rightSpeed > 0) {
-                            direct = "左转";
-                        } else if (rightSpeed < 0) {
-                            direct = "右转";
-                        } else {
-                            direct = "直行";
-                        }
-                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
-                    });
-
-                    ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
-                    try {
-                        mSocketChannel.write(byteBuffer);
-                    } catch (IOException | NotYetConnectedException e) {
-                        Log.e(TAG, "send message error.", e);
-                        connect();
-                        runOnUiThread(() -> {
-                            Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "loop run: 阻塞队列出错。", e);
+            mScheduler.scheduleAtFixedRate(() -> {
+                // 停止状态
+                if (mStop.compareAndSet(4, 4)) {
+                    return;
                 }
-            }
+                runOnUiThread(() -> {
+                    String direct = getDirect(mSpeed, mTurnSpeed);
+                    mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
+                    // 另外的线程，不能立刻看到mSpeed的改变，所以还不是0
+                    mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mSpeed));
+                    mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
+                });
+
+                ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
+                try {
+                    mSocketChannel.write(byteBuffer);
+                } catch (IOException | NotYetConnectedException e) {
+                    Log.e(TAG, "send message error.", e);
+                    connect();
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
+                    });
+                }
+                // 停止命令已经发送，等待触摸app手柄，激活
+                if (mStop.getAndIncrement() != 1) { // 容错，发送2次停止指令
+                    runOnUiThread(() -> {
+                        // 现在已经停止，
+                        String direct = getDirect(0, 0);
+                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
+                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), 0.0D));
+                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), 0.0D));
+                    });
+                }
+            }, 0, 200, TimeUnit.MILLISECONDS);
+//            for (;;) {
+//                try {
+//                    Double[] speeds = mBlockingDeque.take();
+//
+//                    Log.d(TAG, "run: 从队列中获取控制命令成功。taskNumber=[" + mBlockingDeque.size() + "]");
+//
+//                    Double leftSpeed = speeds[0];
+//                    Double rightSpeed = speeds[1];
+////                    Log.d(TAG, "onTouch: WheelSpeed=" + leftSpeed + ", AngularSpeed=" + rightSpeed);
+//
+//                    // 记录上一次的速度
+//                    mSpeed = leftSpeed;
+//                    mTurnSpeed = rightSpeed;
+//                    // 可以换个地方
+//                    runOnUiThread(() -> {
+//                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), leftSpeed));
+//                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), rightSpeed));
+//
+//                        String direct;
+//                        if (rightSpeed > 0) {
+//                            direct = "左转";
+//                        } else if (rightSpeed < 0) {
+//                            direct = "右转";
+//                        } else {
+//                            direct = "直行";
+//                        }
+//                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
+//                    });
+//
+//                    ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
+//                    try {
+//                        mSocketChannel.write(byteBuffer);
+//                    } catch (IOException | NotYetConnectedException e) {
+//                        Log.e(TAG, "send message error.", e);
+//                        connect();
+//                        runOnUiThread(() -> {
+//                            Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
+//                        });
+//                    }
+//                } catch (InterruptedException e) {
+//                    Log.e(TAG, "loop run: 阻塞队列出错。", e);
+//                }
+//            }
         }
     }
 
@@ -418,6 +491,14 @@ public class MainActivity extends AppCompatActivity {
         return speeds;
     }
 
+//    private static class SpeedDirectTask implements Runnable {
+//
+//        @Override
+//        public void run() {
+//
+//        }
+//    }
+
     private static class StartLoopEventHandler extends Handler {
         private volatile boolean init = false;
         private WeakReference<MainActivity> mReference;
@@ -432,6 +513,8 @@ public class MainActivity extends AppCompatActivity {
                     if (!init) {
                         init = true;
                         MainActivity activity = mReference.get();
+//                        activity.mScheduler.scheduleAtFixedRate(() -> {
+//                        }, 0, 200, TimeUnit.MILLISECONDS);
                         Thread thread = new Thread(() -> {
                             activity.mTeleopTask.sendMessageLoop();
                         });
