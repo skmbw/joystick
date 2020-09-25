@@ -339,20 +339,21 @@ public class MainActivity extends AppCompatActivity {
                     // 记录上一次的速度
                     mSpeed = leftSpeed;
                     mTurnSpeed = rightSpeed;
-                    runOnUiThread(() -> {
-                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mSpeed));
-                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
-
-                        String direct;
-                        if (mTurnSpeed > 0) {
-                            direct = "左转";
-                        } else if (mTurnSpeed < 0) {
-                            direct = "右转";
-                        } else {
-                            direct = "直行";
-                        }
-                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
-                    });
+                    // 可以换个地方
+//                    runOnUiThread(() -> {
+//                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), mSpeed));
+//                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
+//
+//                        String direct;
+//                        if (mTurnSpeed > 0) {
+//                            direct = "左转";
+//                        } else if (mTurnSpeed < 0) {
+//                            direct = "右转";
+//                        } else {
+//                            direct = "直行";
+//                        }
+//                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
+//                    });
 
                     ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
                     try {
@@ -398,18 +399,10 @@ public class MainActivity extends AppCompatActivity {
                 speed = BigDecimalUtils.subtract(mSpeed, mBaseSpeed); // 减少一个基点的速度
             }
 
-            if (turnDiff > 0D) { // 加速转弯
-                if (mTurnSpeed >= 0) { // 第二象限
-                    turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
-                } else { // -0.5 - (-0.3) // 第一象限
-                    turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
-                }
-            } else if (turnDiff < 0D) { // 减速转弯
-                if (mTurnSpeed >= 0) { // 第二象限
-                    turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
-                } else { // 第一象限
-                    turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
-                }
+            if (turnDiff > 0D) { // 从第一象限到第二象限，加速转弯
+                turn = BigDecimalUtils.add(mTurnSpeed, mBaseTurn);
+            } else if (turnDiff < 0D) { // 从第二象限到第一象限，减速转弯
+                turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
             }
         } else if (y < 0) { // 后退
             if (speedDiff < 0D) { // 在加速
@@ -427,6 +420,22 @@ public class MainActivity extends AppCompatActivity {
 
         speeds[0] = speed;
         speeds[1] = turn;
+
+        runOnUiThread(() -> {
+            mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), speeds[0]));
+            mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), speeds[1]));
+
+            String direct;
+            if (mTurnSpeed > 0) {
+                direct = "左转";
+            } else if (mTurnSpeed < 0) {
+                direct = "右转";
+            } else {
+                direct = "直行";
+            }
+            mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
+        });
+
         return speeds;
     }
 
