@@ -142,13 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onReset: clear BlockingDeque, task size=[" + mBlockingDeque.size() + "]");
                 mBlockingDeque.clear(); // 清空队列中的指令，没有发送完全的都不需要了
 
-//                Message msg = mHandler.obtainMessage(1);
-//                mHandler.sendMessage(msg);
-
                 // 发送最后一个指令，停止运动
-                // 这里发送指令，仍然是在主线程执行
-//                ByteBuffer byteBuffer = createMessageContent(0, 0);
-//                mTeleopTask.sendMessage(byteBuffer);
                 try {
                     mBlockingDeque.put(new Double[]{0D, 0D});
                 } catch (InterruptedException e) {
