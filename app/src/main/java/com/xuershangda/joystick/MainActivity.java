@@ -6,7 +6,6 @@ import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -69,37 +68,37 @@ public class MainActivity extends AppCompatActivity {
 
         mBlockingQueue = new LinkedBlockingDeque<>();
         mDirectView = findViewById(R.id.direction);
-        Button speedUp = findViewById(R.id.speedUp);
-        Button speedDown = findViewById(R.id.speedDown);
+//        Button speedUp = findViewById(R.id.speedUp);
+//        Button speedDown = findViewById(R.id.speedDown);
         mLeftWheel = findViewById(R.id.leftWheel);
         mRightWheel = findViewById(R.id.rightWheel);
 
-        speedUp.setOnClickListener(view -> {
-            mSpeed = BigDecimalUtils.add(mSpeed, 0.1);
-            if (mSpeed > 2D) {
-                mSpeed = 2D;
-            }
-            Log.d(TAG, "speedUp: 加速0.1D. mSpeed=" + mSpeed);
-            mStop.set(1);
-            try {
-                mBlockingQueue.put(new Double[]{mSpeed, mTurnSpeed});
-            } catch (InterruptedException e) {
-                Log.i(TAG, "Speed Up the robot InterruptedException.");
-            }
-        });
-        speedDown.setOnClickListener(view -> {
-            mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1);
-            if (mSpeed < 0) {
-                mSpeed = 0D;
-            }
-            Log.d(TAG, "speedDown: 减速0.1D. mSpeed=" + mSpeed);
-            mStop.set(1);
+//        speedUp.setOnClickListener(view -> {
+//            mSpeed = BigDecimalUtils.add(mSpeed, 0.1);
+//            if (mSpeed > 2D) {
+//                mSpeed = 2D;
+//            }
+//            Log.d(TAG, "speedUp: 加速0.1D. mSpeed=" + mSpeed);
+//            mStop.set(1);
+//            try {
+//                mBlockingQueue.put(new Double[]{mSpeed, mTurnSpeed});
+//            } catch (InterruptedException e) {
+//                Log.i(TAG, "Speed Up the robot InterruptedException.");
+//            }
+//        });
+//        speedDown.setOnClickListener(view -> {
+//            mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1);
+//            if (mSpeed < 0) {
+//                mSpeed = 0D;
+//            }
+//            Log.d(TAG, "speedDown: 减速0.1D. mSpeed=" + mSpeed);
+//            mStop.set(1);
 //            try {
 //                mBlockingQueue.put(new Double[]{mSpeed, mTurnSpeed});
 //            } catch (InterruptedException e) {
 //                Log.i(TAG, "Speed Down the robot InterruptedException.");
 //            }
-        });
+//        });
 
 //        mHandler = new UpdateViewHandler(this);
         mStartLoopEventHandler = new StartLoopEventHandler(this);
@@ -127,8 +126,8 @@ public class MainActivity extends AppCompatActivity {
                 mStop.set(1);
 
                 // 起步速度太大，连续发送多个指令，不好控制，减少指令的数量
-                if (Math.abs(BigDecimalUtils.subtract((double) horizontalPercent, mSpeed)) < mBaseSpeed
-                        && Math.abs(BigDecimalUtils.subtract((double) verticalPercent, mTurnSpeed)) < mBaseTurn) {
+                if (Math.abs(BigDecimalUtils.subtract((double) horizontalPercent, mSpeed)) <= mBaseSpeed
+                        && Math.abs(BigDecimalUtils.subtract((double) verticalPercent, mTurnSpeed)) <= mBaseTurn) {
                     Log.d(TAG, "onTouch: 速度变化太小，忽略。");
                     return;
                 }
@@ -372,7 +371,7 @@ public class MainActivity extends AppCompatActivity {
                 if (queueSpeeds != null) {
                     mSpeed = queueSpeeds[0];
                     mTurnSpeed = queueSpeeds[1];
-//                    mBlockingQueue.clear();
+                    mBlockingQueue.clear();
                 }
                 runOnUiThread(() -> {
                     String direct = getDirect(mSpeed, mTurnSpeed);
