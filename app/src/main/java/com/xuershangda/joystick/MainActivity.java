@@ -26,9 +26,9 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private Double mBaseTurn = 0.1D;
     private Double mSpeed = 0D;
     private Double mTurnSpeed = 0D;
-    private BlockingQueue<Double[]> mBlockingQueue;
+    private BlockingDeque<Double[]> mBlockingQueue;
     private TextView mDirectView;
     private TextView mLeftWheel;
     private TextView mRightWheel;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
             actionBar.hide();
         }
 
-        mBlockingQueue = new LinkedBlockingQueue<>();
+        mBlockingQueue = new LinkedBlockingDeque<>();
         mDirectView = findViewById(R.id.direction);
         Button speedUp = findViewById(R.id.speedUp);
         Button speedDown = findViewById(R.id.speedDown);
@@ -81,11 +81,11 @@ public class MainActivity extends AppCompatActivity {
             }
             Log.d(TAG, "speedUp: 加速0.1D. mSpeed=" + mSpeed);
             mStop.set(1);
-//            try {
-//                mBlockingQueue.put(new Double[]{mSpeed, mTurnSpeed});
-//            } catch (InterruptedException e) {
-//                Log.i(TAG, "Speed Up the robot InterruptedException.");
-//            }
+            try {
+                mBlockingQueue.put(new Double[]{mSpeed, mTurnSpeed});
+            } catch (InterruptedException e) {
+                Log.i(TAG, "Speed Up the robot InterruptedException.");
+            }
         });
         speedDown.setOnClickListener(view -> {
             mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1);
@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                     mSpeed = linearSpeed;
                     mTurnSpeed = angularSpeed;
 //                    Log.d(TAG, "onTouch: 插入控制命令到队列成功。");
-//                    mBlockingDeque.put(speeds);
+                    mBlockingQueue.put(speeds);
 //                    Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
                 } catch (Exception e) {
                     Log.e(TAG, "onTouch: 产生任务错误。", e);
@@ -163,11 +163,11 @@ public class MainActivity extends AppCompatActivity {
 
                 mStop.set(2);
                 // 发送最后一个指令，停止运动
-//                try {
-//                    mBlockingQueue.put(new Double[]{0D, 0D});
-//                } catch (InterruptedException e) {
-//                    Log.i(TAG, "onReset: stop the robot InterruptedException.");
-//                }
+                try {
+                    mBlockingQueue.put(new Double[]{0D, 0D});
+                } catch (InterruptedException e) {
+                    Log.i(TAG, "onReset: stop the robot InterruptedException.");
+                }
             }
 
             @Override
@@ -368,10 +368,11 @@ public class MainActivity extends AppCompatActivity {
                 if (mStop.compareAndSet(4, 4)) {
                     return;
                 }
-                Double[] queueSpeeds = mBlockingQueue.poll();
+                Double[] queueSpeeds = mBlockingQueue.pollLast();
                 if (queueSpeeds != null) {
                     mSpeed = queueSpeeds[0];
                     mTurnSpeed = queueSpeeds[1];
+//                    mBlockingQueue.clear();
                 }
                 runOnUiThread(() -> {
                     String direct = getDirect(mSpeed, mTurnSpeed);
