@@ -9,6 +9,8 @@ import android.view.ViewGroup;
 
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.xuershangda.joystick.R;
+
 public class FirstFragment extends Fragment {
 
     @Override
