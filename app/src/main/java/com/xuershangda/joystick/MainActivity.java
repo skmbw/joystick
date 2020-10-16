@@ -401,7 +401,7 @@ public class MainActivity extends AppCompatActivity {
                         mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), mTurnSpeed));
                     });
                 }
-            }, 0, 200, TimeUnit.MILLISECONDS);
+            }, 0, 500, TimeUnit.MILLISECONDS);
 //            for (;;) {
 //                try {
 //                    Double[] speeds = mBlockingDeque.take();

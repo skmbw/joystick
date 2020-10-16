@@ -15,5 +15,6 @@
 
     <!-- 背景圆到view边界的距离 -->
     <dimen name="ui_joystick_circle_bg_padding">30dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
 
 </resources>
