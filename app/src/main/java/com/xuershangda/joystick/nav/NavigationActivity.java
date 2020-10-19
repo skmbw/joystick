@@ -11,7 +11,7 @@ import com.xuershangda.joystick.view.FingerPaintImageView;
 
 public class NavigationActivity extends AppCompatActivity {
     private static final String TAG = "NavigationActivity";
-    private FingerPaintImageView fingerPaintImageView;
+    private FingerPaintImageView mFingerPaintImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,15 +19,15 @@ public class NavigationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        fingerPaintImageView = findViewById(R.id.finger);
-        fingerPaintImageView.setOnClickListener(v -> {
+        mFingerPaintImageView = findViewById(R.id.finger);
+        mFingerPaintImageView.setOnClickListener(v -> {
             Log.d(TAG, "onCreate: finger view is clicked.");
         });
 
-        fingerPaintImageView.setFingerTouchViewListener(new FingerTouchViewListener() {
+        mFingerPaintImageView.setFingerTouchViewListener(new FingerTouchViewListener() {
             @Override
-            public void onTouch(double x, double y) {
-
+            public void onTouch(float x, float y) {
+                Log.d(TAG, "onTouch: x=" + x + ", y=" + y);
             }
 
             @Override
@@ -36,13 +36,13 @@ public class NavigationActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onActionDown(double x, double y) {
-
+            public void onActionDown(float x, float y) {
+                Log.d(TAG, "onActionDown: x=" + x + ", y=" + y);
             }
 
             @Override
-            public void onActionUp(double x, double y) {
-
+            public void onActionUp(float x, float y) {
+                Log.d(TAG, "onActionUp: x=" + x + ", y=" + y);
             }
         });
     }
