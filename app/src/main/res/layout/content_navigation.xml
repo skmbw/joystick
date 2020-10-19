@@ -27,6 +27,22 @@
     </Button>
 
     <Button
+        android:id="@+id/set_start_position"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/set_start_position">
+    </Button>
+
+    <Button
+        android:id="@+id/set_endpoint"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/set_endpoint">
+    </Button>
+
+    <Button
         android:id="@+id/clear"
         android:layout_marginTop="10dp"
         android:layout_width="match_parent"

@@ -9,9 +9,20 @@ import com.xuershangda.joystick.R;
 import com.xuershangda.joystick.listener.FingerTouchViewListener;
 import com.xuershangda.joystick.view.FingerPaintImageView;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class NavigationActivity extends AppCompatActivity {
     private static final String TAG = "NavigationActivity";
     private FingerPaintImageView mFingerPaintImageView;
+    private AtomicBoolean startPosition = new AtomicBoolean(false);
+    private AtomicBoolean endPoint = new AtomicBoolean(false);
+    private float startX;
+    private float startY;
+
+    private float endPointStartX;
+    private float endPointStartY;
+    private float endPointEndX;
+    private float endPointEndY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,12 +46,27 @@ public class NavigationActivity extends AppCompatActivity {
             @Override
             public void onActionDown(float x, float y) {
                 Log.d(TAG, "onActionDown: x=" + x + ", y=" + y);
+                if (endPoint.compareAndSet(false, false)) {
+                    endPointStartX = x;
+                    endPointStartY = y;
+                }
             }
 
             @Override
             public void onActionUp(float x, float y) {
                 Log.d(TAG, "onActionUp: x=" + x + ", y=" + y);
                 // 设置起点，以抬起，结束为准
+                if (startPosition.compareAndSet(false, true)) {
+                    startX = x;
+                    startY = y;
+                    mFingerPaintImageView.setInEditMode(false);
+                }
+
+                if (endPoint.compareAndSet(false, true)) {
+                    endPointEndX = x;
+                    endPointEndY = y;
+                    mFingerPaintImageView.setInEditMode(false);
+                }
             }
         });
 
@@ -50,6 +76,18 @@ public class NavigationActivity extends AppCompatActivity {
 
         findViewById(R.id.clear).setOnClickListener(v -> {
             this.mFingerPaintImageView.clear();
+        });
+
+        findViewById(R.id.set_start_position).setOnClickListener(v -> {
+            this.mFingerPaintImageView.clear();
+            this.mFingerPaintImageView.setInEditMode(true);
+            this.endPoint.set(false);
+        });
+
+        findViewById(R.id.set_endpoint).setOnClickListener(v -> {
+            this.mFingerPaintImageView.clear();
+            this.mFingerPaintImageView.setInEditMode(true);
+            this.startPosition.set(false);
         });
     }
 }
