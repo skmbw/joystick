@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import com.xuershangda.joystick.R
 import com.xuershangda.joystick.listener.FingerTouchViewListener
+import kotlin.math.abs
 
 class FingerPaintImageView @JvmOverloads constructor(context: Context,
                                                      attrs: AttributeSet? = null,
@@ -183,8 +184,8 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         val xPos = event.x.coerceIn(xTranslation, xTranslation + sourceBitmap.intrinsicWidth * scale)
         val yPos = event.y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
 
-        val dx = Math.abs(xPos - currentX)
-        val dy = Math.abs(yPos - currentY)
+        val dx = abs(xPos - currentX)
+        val dy = abs(yPos - currentY)
 
         if (dx >= touchTolerance || dy >= touchTolerance) {
             getCurrentPath()?.quadTo(currentX, currentY, (xPos + currentX) / 2, (yPos + currentY) / 2)
@@ -197,13 +198,19 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         getCurrentPath()?.lineTo(currentX, currentY)
     }
 
+    /**
+     * 在坐标（x, y）点处，画一个点
+     *
+     * @param x 屏幕x轴坐标
+     * @param y 屏幕y轴坐标
+     */
     fun drawPoint(x: Float, y: Float) {
         val sourceBitmap = super.getDrawable() ?: return
 
         val xTranslation = matrixValues[Matrix.MTRANS_X]
         val yTranslation = matrixValues[Matrix.MTRANS_Y]
         val scale = matrixValues[Matrix.MSCALE_X]
-        // 对缩放进行矫正
+        // 对缩放进行矫正，确保x值在两个参数之间，小于最小取最小，大于最大取最大
         val xPos = x.coerceIn(xTranslation, xTranslation + sourceBitmap.intrinsicWidth * scale)
         val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
 
