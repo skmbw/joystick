@@ -9,6 +9,7 @@ import android.support.v7.widget.AppCompatImageView
 import android.util.AttributeSet
 import android.view.MotionEvent
 import com.xuershangda.joystick.R
+import com.xuershangda.joystick.listener.FingerTouchViewListener
 
 class FingerPaintImageView @JvmOverloads constructor(context: Context,
                                                      attrs: AttributeSet? = null,
@@ -28,6 +29,7 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
     private var brushCanvas: Canvas? = null
     private var countDrawn = 0
     private var currentBrush = BrushType.NORMAL
+    var fingerTouchViewListener: FingerTouchViewListener? = null
 
     var inEditMode = false
 
@@ -131,14 +133,17 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
                     handleTouchStart(event)
+                    fingerTouchViewListener?.onActionDown(event.x, event.y)
                     invalidate()
                 }
                 MotionEvent.ACTION_MOVE -> {
                     handleTouchMove(event)
+                    fingerTouchViewListener?.onTouch(event.x, event.y)
                     invalidate()
                 }
                 MotionEvent.ACTION_UP -> {
                     handleTouchEnd()
+                    fingerTouchViewListener?.onActionUp(event.x, event.y)
                     countDrawn++
                     invalidate()
                 }
