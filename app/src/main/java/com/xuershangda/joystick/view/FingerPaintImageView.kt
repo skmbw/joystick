@@ -193,7 +193,11 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         }
     }
 
-    private fun handleTouchEnd() = getCurrentPath()?.lineTo(currentX, currentY)
+    fun handleTouchEnd() = getCurrentPath()?.lineTo(currentX, currentY)
+
+    fun drawPoint(x: Float, y: Float) {
+        getCurrentPath()?.lineTo(x, y)
+    }
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)

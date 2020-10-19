@@ -20,9 +20,12 @@ public class NavigationActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mFingerPaintImageView = findViewById(R.id.finger);
-        mFingerPaintImageView.setOnClickListener(v -> {
-            Log.d(TAG, "onCreate: finger view is clicked.");
-        });
+//        mFingerPaintImageView.setOnClickListener(v -> {
+//            Log.d(TAG, "onCreate: finger view is clicked.");
+//            float x = v.getX();
+//            float y = v.getY();
+//            Log.d(TAG, "onCreate: finger view is click at(x=" + x + ", y=" + y + ").");
+//        });
 
         mFingerPaintImageView.setFingerTouchViewListener(new FingerTouchViewListener() {
             @Override
@@ -43,7 +46,13 @@ public class NavigationActivity extends AppCompatActivity {
             @Override
             public void onActionUp(float x, float y) {
                 Log.d(TAG, "onActionUp: x=" + x + ", y=" + y);
+                // 设置起点，以抬起，结束为准
             }
+        });
+
+        findViewById(R.id.testClickBtn).setOnClickListener(v -> {
+//            this.mFingerPaintImageView.handleTouchEnd();
+            this.mFingerPaintImageView.drawPoint(300, 440);
         });
     }
 }

@@ -21,4 +21,5 @@
 
     <string name="navigation">启动导航</string>
     <string name="operation">手柄操控</string>
+    <string name="click">Click</string>
 </resources>
