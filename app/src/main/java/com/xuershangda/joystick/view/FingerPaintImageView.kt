@@ -196,7 +196,11 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
     fun handleTouchEnd() = getCurrentPath()?.lineTo(currentX, currentY)
 
     fun drawPoint(x: Float, y: Float) {
-        getCurrentPath()?.lineTo(x, y)
+        paths.add(Path().also { it.moveTo(x, y) } to Paint(pathPaint))
+        val path = getCurrentPath()
+//        path?.moveTo(x, y)
+        path?.lineTo(x, x)
+        invalidate() // 调用这个才会开始绘制
     }
 
     override fun onDraw(canvas: Canvas?) {

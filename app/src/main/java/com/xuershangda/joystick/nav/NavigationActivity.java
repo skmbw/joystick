@@ -50,9 +50,13 @@ public class NavigationActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.testClickBtn).setOnClickListener(v -> {
+        findViewById(R.id.click).setOnClickListener(v -> {
 //            this.mFingerPaintImageView.handleTouchEnd();
             this.mFingerPaintImageView.drawPoint(300, 440);
+        });
+
+        findViewById(R.id.clear).setOnClickListener(v -> {
+            this.mFingerPaintImageView.clear();
         });
     }
 }
