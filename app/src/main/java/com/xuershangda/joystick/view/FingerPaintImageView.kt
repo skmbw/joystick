@@ -193,13 +193,23 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         }
     }
 
-    fun handleTouchEnd() = getCurrentPath()?.lineTo(currentX, currentY)
+    fun handleTouchEnd() {
+        getCurrentPath()?.lineTo(currentX, currentY)
+    }
 
     fun drawPoint(x: Float, y: Float) {
-        paths.add(Path().also { it.moveTo(x, y) } to Paint(pathPaint))
-        val path = getCurrentPath()
-//        path?.moveTo(x, y)
-        path?.lineTo(x, x)
+        val sourceBitmap = super.getDrawable() ?: return
+
+        val xTranslation = matrixValues[Matrix.MTRANS_X]
+        val yTranslation = matrixValues[Matrix.MTRANS_Y]
+        val scale = matrixValues[Matrix.MSCALE_X]
+        // 对缩放进行矫正
+        val xPos = x.coerceIn(xTranslation, xTranslation + sourceBitmap.intrinsicWidth * scale)
+        val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
+
+        paths.add(Path().also { it.moveTo(x + 1, y + 1) } to Paint(pathPaint))
+        var path = getCurrentPath()
+        path?.lineTo(xPos, yPos)
         invalidate() // 调用这个才会开始绘制
     }
 
