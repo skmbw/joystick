@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -120,13 +121,6 @@ public class NavigationActivity extends AppCompatActivity {
         });
     }
 
-    private void imageSrc() {
-//        this.mFingerPaintImageView.setImageDrawable();
-//        this.mFingerPaintImageView.setImageBitmap();
-//        this.mFingerPaintImageView.setImageResource();
-//        this.mFingerPaintImageView.setImageURI();
-    }
-
     private void getImage() {
         String url = "http://";
 
@@ -158,10 +152,54 @@ public class NavigationActivity extends AppCompatActivity {
         });
     }
 
+    public void setStartPoint() {
+        reportPosition();
+    }
+
+    public void setEndPoint() {
+        reportPosition();
+    }
+
+    private void reportPosition() {
+        String url = "http://";
+        Map<String, Float> params = new HashMap<>();
+        params.put("x", 23F);
+        params.put("y", 33F);
+        params.put("angle", 234F);
+
+        postJson(url, params, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                Log.e(TAG, "onFailure: 上报位置错误。", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(NavigationActivity.this, "上报位置错误。", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                ResponseBody body = response.body();
+                if (body != null) {
+                    InputStream stream = body.byteStream();
+//                    final Bitmap bitmap = BitmapFactory.decodeStream(stream);
+//                    runOnUiThread(() -> {
+//                        mFingerPaintImageView.setImageBitmap(bitmap);
+//                    });
+                } else {
+                    Log.e(TAG, "onResponse: 上报位置响应为空。");
+                    runOnUiThread(() -> {
+                        Toast.makeText(NavigationActivity.this, "上报位置响应为空。", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
+    }
+
     /**
      * OkHttpClient 封装了参数设置
-     * @param url url
-     * @param params 参数
+     *
+     * @param url      url
+     * @param params   参数
      * @param callback OkHttpClient Call对象 回调
      */
     protected void call(String url, Map<String, Object> params, Callback callback) {
@@ -173,6 +211,7 @@ public class NavigationActivity extends AppCompatActivity {
             String name = entry.getKey();
             Object value = entry.getValue();
             if (value instanceof List) {
+                @SuppressWarnings("rawtypes")
                 List listValue = (List) value;
                 for (Object obj : listValue) {
                     if (obj instanceof File) {
@@ -200,6 +239,9 @@ public class NavigationActivity extends AppCompatActivity {
         // 如果一个参数都没有就不能添加body了，防止没有登录的情况
         Request.Builder requestBuilder = new Request.Builder();
         requestBuilder.url(url);
+        if (!params.isEmpty()) {
+            requestBuilder.post(builder.build());
+        }
 
         Request request = requestBuilder.build();
         Call call = okHttpClient.newCall(request);
@@ -209,8 +251,8 @@ public class NavigationActivity extends AppCompatActivity {
     /**
      * OkHttpClient 封装了post json 请求的参数设置
      *
-     * @param url url
-     * @param object 参数
+     * @param url      url
+     * @param object   参数
      * @param callback OkHttpClient Call对象 回调
      */
     protected void postJson(String url, Object object, Callback callback) {
