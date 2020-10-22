@@ -152,11 +152,39 @@ public class NavigationActivity extends AppCompatActivity {
         });
     }
 
+    public void getCurrentPoint() {
+        String url = "";
+        postJson(url, null, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                Log.e(TAG, "onFailure: 获取位置错误。", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(NavigationActivity.this, "获取位置错误。", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                ResponseBody body = response.body();
+                if (body != null) {
+                    InputStream stream = body.byteStream();
+                } else {
+                    Log.e(TAG, "onResponse: 获取位置响应为空。");
+                    runOnUiThread(() -> {
+                        Toast.makeText(NavigationActivity.this, "获取位置响应为空。", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
+    }
+
     public void setStartPoint() {
+        Log.i(TAG, "setStartPoint: 设置起点位置。");
         reportPosition();
     }
 
     public void setEndPoint() {
+        Log.i(TAG, "setEndPoint: 设置终点位置。");
         reportPosition();
     }
 
@@ -262,9 +290,11 @@ public class NavigationActivity extends AppCompatActivity {
         Request.Builder requestBuilder = new Request.Builder();
         requestBuilder.url(url);
 
-        byte[] jsonBody = JSON.toJSONBytes(object);
-        RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=UTF-8"), jsonBody);
-        requestBuilder.post(body);
+        if (object != null) {
+            byte[] jsonBody = JSON.toJSONBytes(object);
+            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=UTF-8"), jsonBody);
+            requestBuilder.post(body);
+        }
 
         Log.i(TAG, "postJson: OkHttp 构建参数完成");
 
