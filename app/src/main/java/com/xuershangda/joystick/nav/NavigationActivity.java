@@ -1,17 +1,24 @@
 package com.xuershangda.joystick.nav;
 
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
 import com.xuershangda.joystick.R;
 import com.xuershangda.joystick.listener.FingerTouchViewListener;
 import com.xuershangda.joystick.view.FingerPaintImageView;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,6 +30,8 @@ import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class NavigationActivity extends AppCompatActivity {
     public static final String BOUNDARY = "--tda67ajd9km3zs05dha991piq90cm0bf43vd--";
@@ -119,8 +128,34 @@ public class NavigationActivity extends AppCompatActivity {
     }
 
     private void getImage() {
-        BitmapFactory.decodeByteArray(null, 0, 1);
-        BitmapFactory.decodeStream(null);
+        String url = "http://";
+
+        call(url, Collections.emptyMap(), new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                Log.e(TAG, "onFailure: 获取地图图片错误。", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(NavigationActivity.this, "获取地图图片错误。", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                ResponseBody body = response.body();
+                if (body != null) {
+                    InputStream stream = body.byteStream();
+                    final Bitmap bitmap = BitmapFactory.decodeStream(stream);
+                    runOnUiThread(() -> {
+                        mFingerPaintImageView.setImageBitmap(bitmap);
+                    });
+                } else {
+                    Log.e(TAG, "onResponse: 获取地图图片响应为空。");
+                    runOnUiThread(() -> {
+                        Toast.makeText(NavigationActivity.this, "获取地图图片响应为空。", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
     }
 
     /**
