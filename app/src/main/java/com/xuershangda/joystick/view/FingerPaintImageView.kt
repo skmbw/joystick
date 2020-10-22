@@ -220,6 +220,14 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         invalidate() // 调用这个才会开始绘制
     }
 
+    fun scaleX(): Float {
+        return matrixValues[Matrix.MSCALE_X]
+    }
+
+    fun scaleY(): Float {
+        return matrixValues[Matrix.MSCALE_Y]
+    }
+
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         brushBitmap?.eraseColor(Color.TRANSPARENT)
