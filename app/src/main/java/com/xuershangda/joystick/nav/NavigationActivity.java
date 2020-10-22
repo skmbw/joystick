@@ -18,6 +18,8 @@ public class NavigationActivity extends AppCompatActivity {
     private AtomicBoolean endPoint = new AtomicBoolean(false);
     private float startX;
     private float startY;
+    private float endX;
+    private float endY;
 
     private float endPointStartX;
     private float endPointStartY;
@@ -50,6 +52,10 @@ public class NavigationActivity extends AppCompatActivity {
                     endPointStartX = x;
                     endPointStartY = y;
                 }
+                if (startPosition.compareAndSet(false, false)) {
+                    startX = x;
+                    startY = y;
+                }
             }
 
             @Override
@@ -57,8 +63,8 @@ public class NavigationActivity extends AppCompatActivity {
                 Log.d(TAG, "onActionUp: x=" + x + ", y=" + y);
                 // 设置起点，以抬起，结束为准
                 if (startPosition.compareAndSet(false, true)) {
-                    startX = x;
-                    startY = y;
+                    endX = x;
+                    endY = y;
                     mFingerPaintImageView.setInEditMode(false);
                 }
 
