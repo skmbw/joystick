@@ -8,7 +8,7 @@
     tools:context=".nav.InspectionActivity">
 
     <com.xuershangda.joystick.view.FingerPaintImageView
-        android:id="@+id/finger"
+        android:id="@+id/map"
         android:layout_width="match_parent"
         android:layout_height="360dp"
         android:layout_marginStart="6dp"
