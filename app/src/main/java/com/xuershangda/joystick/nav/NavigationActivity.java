@@ -110,13 +110,13 @@ public class NavigationActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.set_start_position).setOnClickListener(v -> {
-            this.mFingerPaintImageView.clear();
+//            this.mFingerPaintImageView.clear();
             this.mFingerPaintImageView.setInEditMode(true);
             this.endPoint.set(false);
         });
 
         findViewById(R.id.set_endpoint).setOnClickListener(v -> {
-            this.mFingerPaintImageView.clear();
+//            this.mFingerPaintImageView.clear();
             this.mFingerPaintImageView.setInEditMode(true);
             this.startPosition.set(false);
         });

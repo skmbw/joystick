@@ -23,8 +23,18 @@
     <string name="operation">手柄操控</string>
     <string name="click">Click</string>
     <string name="clear">Clear</string>
-    <string name="follow">跟随</string>
-    <string name="inspection">巡检</string>
-    <string name="set_start_position">初始位置</string>
+    <string name="follow">跟随设置</string>
+    <string name="inspection">巡检设置</string>
+    <string name="set_start_position">设置起点和方向</string>
     <string name="set_endpoint">设置终点和方向</string>
+
+    <string name="follow_target">拍摄跟随目标</string>
+    <string name="change_target">切换跟随目标</string>
+    <string name="stop_follow">停止跟随</string>
+
+    <string name="set_inspection_time">设置巡检时间</string>
+    <string name="start_inspection">开始巡检</string>
+    <string name="interrupt_inspection">中断巡检</string>
+    <string name="stop_inspection">停止巡检</string>
+    <string name="set_inspection_point">设置巡检点</string>
 </resources>

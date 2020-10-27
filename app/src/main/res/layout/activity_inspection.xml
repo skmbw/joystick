@@ -1,8 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".nav.InspectionActivity">
 
-</android.support.constraint.ConstraintLayout>
+    <com.xuershangda.joystick.view.FingerPaintImageView
+        android:id="@+id/finger"
+        android:layout_width="match_parent"
+        android:layout_height="360dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginTop="2dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/tianzige"
+        app:strokeWidth="12sp"
+        app:inEditMode="true"/>
+
+    <Button
+        android:id="@+id/click"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/click">
+    </Button>
+
+</LinearLayout>
