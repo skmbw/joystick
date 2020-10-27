@@ -1,5 +1,6 @@
 package com.xuershangda.joystick.nav;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -118,6 +119,16 @@ public class NavigationActivity extends AppCompatActivity {
             this.mFingerPaintImageView.clear();
             this.mFingerPaintImageView.setInEditMode(true);
             this.startPosition.set(false);
+        });
+
+        findViewById(R.id.follow).setOnClickListener(v -> {
+            Intent intent = new Intent(this, FollowActivity.class);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.inspection).setOnClickListener(v -> {
+            Intent intent = new Intent(this, InspectionActivity.class);
+            startActivity(intent);
         });
     }
 
