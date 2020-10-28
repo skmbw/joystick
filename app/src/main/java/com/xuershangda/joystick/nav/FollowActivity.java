@@ -3,6 +3,7 @@ package com.xuershangda.joystick.nav;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 
 import com.xuershangda.joystick.BuildConfig;
 import com.xuershangda.joystick.R;
+import com.xuershangda.joystick.view.FingerPaintImageView;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -46,6 +48,8 @@ public class FollowActivity extends AppCompatActivity {
     private ArrayList<String> selectedPicture = new ArrayList<>();
     private String cameraPath = null;
 
+    private FingerPaintImageView imageView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,6 +60,8 @@ public class FollowActivity extends AppCompatActivity {
         findViewById(R.id.follow_target).setOnClickListener(v -> {
             goCamera();
         });
+
+        imageView = findViewById(R.id.map);
     }
 
     /**
@@ -128,15 +134,11 @@ public class FollowActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == TAKE_PICTURE) {
-            if (resultCode == RESULT_OK && cameraPath != null) {
+            if (resultCode == RESULT_OK && data != null) {
+                Bundle bundle = data.getExtras();
+                Bitmap bitmap = (Bitmap) bundle.get("data");
 
-                selectedPicture.add(cameraPath);
-
-                Intent data2 = new Intent();
-                data2.putExtra(INTENT_SELECTED_PICTURE, selectedPicture);
-
-                setResult(RESULT_OK, data2);
-                this.finish();
+                imageView.setImageBitmap(bitmap);
             }
         }
     }
