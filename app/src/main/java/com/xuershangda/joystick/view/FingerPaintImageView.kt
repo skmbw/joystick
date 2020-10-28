@@ -23,8 +23,8 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
     }
 
     private val defaultStrokeColor = Color.RED
-    private val defaultStrokeWidth = 12f
-    private val defaultTouchTolerance = 4f
+    private val defaultStrokeWidth = 36F
+    private val defaultTouchTolerance = 4F
     private val defaultBitmapPaint = Paint(Paint.DITHER_FLAG)
     private var brushBitmap: Bitmap? = null
     private var brushCanvas: Canvas? = null
@@ -214,10 +214,55 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         val xPos = x.coerceIn(xTranslation, xTranslation + sourceBitmap.intrinsicWidth * scale)
         val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
 
-        paths.add(Path().also { it.moveTo(x + 1, y + 1) } to Paint(pathPaint))
+        paths.add(Path().also { it.moveTo(x, y) } to Paint(pathPaint))
         val path = getCurrentPath()
         path?.lineTo(xPos, yPos)
         invalidate() // 调用这个才会开始绘制
+    }
+
+    fun drawLine(startX: Float, startY: Float, x: Float, y: Float) {
+        val sourceBitmap = super.getDrawable() ?: return
+
+        val xTranslation = matrixValues[Matrix.MTRANS_X]
+        val yTranslation = matrixValues[Matrix.MTRANS_Y]
+        val scale = matrixValues[Matrix.MSCALE_X]
+        // 对缩放进行矫正，确保x值在两个参数之间，小于最小取最小，大于最大取最大
+        val xPos = x.coerceIn(xTranslation, xTranslation + sourceBitmap.intrinsicWidth * scale)
+        val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
+
+        setStroke()
+
+        val path = Path().also { it.moveTo(startX, startY) }
+        paths.add(path to Paint(pathPaint))
+        path.lineTo(xPos, yPos)
+        invalidate()
+
+        resetStroke()
+    }
+
+    fun setStroke() {
+        this.strokeColor = Color.BLACK
+        this.strokeWidth = 4F
+    }
+
+    fun resetStroke() {
+        this.strokeColor = defaultStrokeColor
+        this.strokeWidth = defaultStrokeWidth
+    }
+
+    fun drawArrow(startX: Float, startY: Float, x: Float, y: Float) {
+        val sourceBitmap = super.getDrawable() ?: return
+
+        val xTranslation = matrixValues[Matrix.MTRANS_X]
+        val yTranslation = matrixValues[Matrix.MTRANS_Y]
+        val scale = matrixValues[Matrix.MSCALE_X]
+        // 对缩放进行矫正，确保x值在两个参数之间，小于最小取最小，大于最大取最大
+        val xPos = x.coerceIn(xTranslation, xTranslation + sourceBitmap.intrinsicWidth * scale)
+        val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
+
+        val path = Path().also { it.moveTo(startX, startY) }
+        path.lineTo(xPos, yPos)
+        invalidate()
     }
 
     fun scaleX(): Float {

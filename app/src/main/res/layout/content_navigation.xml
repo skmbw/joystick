@@ -15,7 +15,6 @@
         android:layout_marginTop="2dp"
         android:scaleType="centerCrop"
         android:src="@drawable/tianzige"
-        app:strokeWidth="12sp"
         app:inEditMode="true"/>
 
     <Button

@@ -112,6 +112,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         findViewById(R.id.click).setOnClickListener(v -> {
             this.mFingerPaintImageView.drawPoint(300, 440);
+            this.mFingerPaintImageView.drawLine(200, 200, 250, 250);
         });
 
         findViewById(R.id.clear).setOnClickListener(v -> {
