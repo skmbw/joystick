@@ -17,5 +17,11 @@ public class FollowActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_follow);
+
+        setTitle(R.string.follow);
+
+        findViewById(R.id.follow_target).setOnClickListener(v -> {
+
+        });
     }
 }

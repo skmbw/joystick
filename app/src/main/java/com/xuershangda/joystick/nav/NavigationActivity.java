@@ -56,6 +56,8 @@ public class NavigationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle(R.string.navigation);
+
         setSupportActionBar(toolbar);
         mFingerPaintImageView = findViewById(R.id.finger);
 
