@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -315,5 +316,11 @@ public class NavigationActivity extends AppCompatActivity {
 
         Call call = okHttpClient.newCall(request);
         call.enqueue(callback);
+    }
+
+    public int getScreenWidth() {
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        return dm.widthPixels;
     }
 }
