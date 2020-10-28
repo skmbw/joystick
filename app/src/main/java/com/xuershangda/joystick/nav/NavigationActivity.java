@@ -13,6 +13,7 @@ import android.widget.Toast;
 import com.alibaba.fastjson.JSON;
 import com.xuershangda.joystick.R;
 import com.xuershangda.joystick.listener.FingerTouchViewListener;
+import com.xuershangda.joystick.utils.BigDecimalUtils;
 import com.xuershangda.joystick.view.FingerPaintImageView;
 
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +53,9 @@ public class NavigationActivity extends AppCompatActivity {
     private float endPointEndX;
     private float endPointEndY;
 
+    private double screenWidth;
+    private double mapWidth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +65,8 @@ public class NavigationActivity extends AppCompatActivity {
 
         setSupportActionBar(toolbar);
         mFingerPaintImageView = findViewById(R.id.finger);
+
+        this.screenWidth = getScreenWidth();
 
         mFingerPaintImageView.setFingerTouchViewListener(new FingerTouchViewListener() {
             @Override
@@ -318,9 +324,31 @@ public class NavigationActivity extends AppCompatActivity {
         call.enqueue(callback);
     }
 
-    public int getScreenWidth() {
+    public double getScreenWidth() {
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
         return dm.widthPixels;
+    }
+
+    /**
+     * 获得缩放比率，以屏幕的宽度为1，用地图图片宽度除以屏幕宽度。
+     *
+     * @return 地图缩放比率
+     */
+    public double getScaleRate() {
+        if (mapWidth != 0) {
+            return BigDecimalUtils.divide(mapWidth, screenWidth, 2);
+        }
+        return 0;
+    }
+
+    /**
+     * 获取地图的像素点
+     *
+     * @param xy x轴坐标或y轴坐标
+     * @return 屏幕坐标转换为地图像素坐标
+     */
+    public double getMapPixelPoint(double xy) {
+        return BigDecimalUtils.multiply(xy, getScaleRate());
     }
 }
