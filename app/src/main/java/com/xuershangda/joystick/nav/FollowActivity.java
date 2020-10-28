@@ -33,6 +33,7 @@ import java.util.Locale;
  * @since 2020-10-27
  */
 public class FollowActivity extends AppCompatActivity {
+    private static final String TAG = "FollowActivity";
 
     // 最多选择图片的个数
     private static int MAX_NUM = 3;
@@ -99,10 +100,11 @@ public class FollowActivity extends AppCompatActivity {
      * 用于拍照时获取输出的Uri
      */
     protected Uri getOutputMediaFileUri() {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Night");
+        // 这个参数的child，不能与其他app重复。否则保存图片会出错。
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "joystick");
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
-                Log.d("MyCameraApp", "failed to create directory");
+                Log.d(TAG, "failed to create directory");
                 return null;
             }
         }
@@ -112,7 +114,7 @@ public class FollowActivity extends AppCompatActivity {
         cameraPath = mediaFile.getAbsolutePath();
 
         Uri contentUri;
-        //判断是否是AndroidN以及更高的版本
+        // 判断是否是AndroidN以及更高的版本
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             contentUri = FileProvider.getUriForFile(FollowActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", mediaFile);
         } else {
@@ -124,17 +126,18 @@ public class FollowActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK && cameraPath != null) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == TAKE_PICTURE) {
+            if (resultCode == RESULT_OK && cameraPath != null) {
 
-            selectedPicture.add(cameraPath);
+                selectedPicture.add(cameraPath);
 
-            Intent data2 = new Intent();
-            data2.putExtra(INTENT_SELECTED_PICTURE, selectedPicture);
+                Intent data2 = new Intent();
+                data2.putExtra(INTENT_SELECTED_PICTURE, selectedPicture);
 
-            setResult(RESULT_OK, data2);
-            this.finish();
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
+                setResult(RESULT_OK, data2);
+                this.finish();
+            }
         }
     }
 }
