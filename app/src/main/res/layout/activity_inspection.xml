@@ -20,11 +20,26 @@
         app:inEditMode="true"/>
 
     <Button
-        android:id="@+id/click"
+        android:id="@+id/set_inspection_time"
         android:layout_marginTop="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/click">
+        android:text="@string/set_inspection_time">
     </Button>
 
+    <Button
+        android:id="@+id/start_inspection"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/start_inspection">
+    </Button>
+
+    <Button
+        android:id="@+id/stop_inspection"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/stop_inspection">
+    </Button>
 </LinearLayout>
