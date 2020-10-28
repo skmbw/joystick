@@ -136,9 +136,10 @@ public class FollowActivity extends AppCompatActivity {
         if (requestCode == TAKE_PICTURE) {
             if (resultCode == RESULT_OK && data != null) {
                 Bundle bundle = data.getExtras();
-                Bitmap bitmap = (Bitmap) bundle.get("data");
-
-                imageView.setImageBitmap(bitmap);
+                if (bundle != null) {
+                    Bitmap bitmap = (Bitmap) bundle.get("data");
+                    imageView.setImageBitmap(bitmap);
+                }
             }
         }
     }
