@@ -1,6 +1,5 @@
 package com.xuershangda.joystick.nav;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -11,6 +10,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.xuershangda.joystick.R;
 import com.xuershangda.joystick.listener.FingerTouchViewListener;
 import com.xuershangda.joystick.utils.BigDecimalUtils;
@@ -45,20 +45,26 @@ public class NavigationActivity extends AppCompatActivity {
     public static final String BOUNDARY = "--tda67ajd9km3zs05dha991piq90cm0bf43vd--";
     private static final String TAG = "NavigationActivity";
     private FingerPaintImageView mFingerPaintImageView;
-    private AtomicBoolean startPosition = new AtomicBoolean(false);
-    private AtomicBoolean endPoint = new AtomicBoolean(false);
+    private AtomicBoolean startFlag = new AtomicBoolean(false);
+    private AtomicBoolean endFlag = new AtomicBoolean(false);
     private float startX;
     private float startY;
     private float endX;
     private float endY;
 
-    private float endPointStartX;
-    private float endPointStartY;
-    private float endPointEndX;
-    private float endPointEndY;
+    private float goalStartX;
+    private float goalStartY;
+    private float goalEndX;
+    private float goalEndY;
 
     private double screenWidth;
     private double mapWidth;
+
+    private static final String START_POINT = "start_point";
+    private static final String START_ORI = "start_ori";
+    private static final String END_POINT = "end_point";
+    private static final String END_ORI = "end_ori";
+    private static final String CURRENT_POINT = "current_point";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,11 +92,11 @@ public class NavigationActivity extends AppCompatActivity {
             @Override
             public void onActionDown(float x, float y) {
                 Log.d(TAG, "onActionDown: x=" + x + ", y=" + y);
-                if (endPoint.compareAndSet(false, false)) {
-                    endPointStartX = x;
-                    endPointStartY = y;
+                if (endFlag.compareAndSet(false, false)) {
+                    goalStartX = x;
+                    goalStartY = y;
                 }
-                if (startPosition.compareAndSet(false, false)) {
+                if (startFlag.compareAndSet(false, false)) {
                     startX = x;
                     startY = y;
                 }
@@ -100,25 +106,32 @@ public class NavigationActivity extends AppCompatActivity {
             public void onActionUp(float x, float y) {
                 Log.d(TAG, "onActionUp: x=" + x + ", y=" + y);
                 // 设置起点，以抬起，结束为准
-                if (startPosition.compareAndSet(false, true)) {
+                if (startFlag.compareAndSet(false, true)) {
                     endX = x;
                     endY = y;
+                    mFingerPaintImageView.clear();
+                    mFingerPaintImageView.setStrokeBlue();
+                    mFingerPaintImageView.drawPoint(startX, startY, START_POINT);
+                    mFingerPaintImageView.drawLine(startX, startY, endX, endY, START_ORI);
                     mFingerPaintImageView.setInEditMode(false);
                 }
 
-                if (endPoint.compareAndSet(false, true)) {
-                    endPointEndX = x;
-                    endPointEndY = y;
+                if (endFlag.compareAndSet(false, true)) {
+                    goalEndX = x;
+                    goalEndY = y;
+                    mFingerPaintImageView.drawPoint(goalStartX, goalStartY, END_POINT);
+                    mFingerPaintImageView.drawLine(goalStartX, goalStartY, goalEndX, goalEndY, END_ORI);
                     mFingerPaintImageView.setInEditMode(false);
                 }
             }
         });
 
         getImage();
+        getCurrentPoint();
 
         findViewById(R.id.click).setOnClickListener(v -> {
-            this.mFingerPaintImageView.drawPoint(300, 440);
-            this.mFingerPaintImageView.drawLine(300, 440, 250, 250);
+            this.mFingerPaintImageView.drawPoint(300, 440, "test");
+            this.mFingerPaintImageView.drawLine(300, 440, 250, 250, "test");
         });
 
         findViewById(R.id.clear).setOnClickListener(v -> {
@@ -128,24 +141,24 @@ public class NavigationActivity extends AppCompatActivity {
         findViewById(R.id.set_start_position).setOnClickListener(v -> {
 //            this.mFingerPaintImageView.clear();
             this.mFingerPaintImageView.setInEditMode(true);
-            this.endPoint.set(false);
+            this.startFlag.set(false);
         });
 
         findViewById(R.id.set_endpoint).setOnClickListener(v -> {
 //            this.mFingerPaintImageView.clear();
             this.mFingerPaintImageView.setInEditMode(true);
-            this.startPosition.set(false);
+            this.endFlag.set(false);
         });
 
-        findViewById(R.id.follow).setOnClickListener(v -> {
-            Intent intent = new Intent(this, FollowActivity.class);
-            startActivity(intent);
-        });
-
-        findViewById(R.id.inspection).setOnClickListener(v -> {
-            Intent intent = new Intent(this, InspectionActivity.class);
-            startActivity(intent);
-        });
+//        findViewById(R.id.follow).setOnClickListener(v -> {
+//            Intent intent = new Intent(this, FollowActivity.class);
+//            startActivity(intent);
+//        });
+//
+//        findViewById(R.id.inspection).setOnClickListener(v -> {
+//            Intent intent = new Intent(this, InspectionActivity.class);
+//            startActivity(intent);
+//        });
     }
 
     private void getImage() {
@@ -194,7 +207,11 @@ public class NavigationActivity extends AppCompatActivity {
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 ResponseBody body = response.body();
                 if (body != null) {
-                    InputStream stream = body.byteStream();
+                    byte[] bytes = body.bytes();
+                    JSONObject jsonObject = (JSONObject) JSON.parse(bytes);
+                    float x = jsonObject.getFloatValue("piexl_x");
+                    float y = jsonObject.getFloatValue("piexl_y");
+                    mFingerPaintImageView.drawPoint(x, y, CURRENT_POINT);
                 } else {
                     Log.e(TAG, "onResponse: 获取位置响应为空。");
                     runOnUiThread(() -> {
