@@ -11,6 +11,8 @@ import android.view.MotionEvent
 import com.xuershangda.joystick.R
 import com.xuershangda.joystick.listener.FingerTouchViewListener
 import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class FingerPaintImageView @JvmOverloads constructor(context: Context,
                                                      attrs: AttributeSet? = null,
@@ -259,6 +261,8 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         // 对缩放进行矫正，确保x值在两个参数之间，小于最小取最小，大于最大取最大
         val xPos = x.coerceIn(xTranslation, xTranslation + sourceBitmap.intrinsicWidth * scale)
         val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
+
+        val length = sqrt((startX - x).toDouble().pow(2) + (startY - y).toDouble().pow(2))
 
         val path = Path().also { it.moveTo(startX, startY) }
         path.lineTo(xPos, yPos)
