@@ -37,6 +37,10 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
+import static com.xuershangda.joystick.nav.Consts.API_GET_MAP;
+import static com.xuershangda.joystick.nav.Consts.API_GET_POS;
+import static com.xuershangda.joystick.nav.Consts.HOST;
+
 public class NavigationActivity extends AppCompatActivity {
     public static final String BOUNDARY = "--tda67ajd9km3zs05dha991piq90cm0bf43vd--";
     private static final String TAG = "NavigationActivity";
@@ -110,6 +114,8 @@ public class NavigationActivity extends AppCompatActivity {
             }
         });
 
+        getImage();
+
         findViewById(R.id.click).setOnClickListener(v -> {
             this.mFingerPaintImageView.drawPoint(300, 440);
             this.mFingerPaintImageView.drawLine(300, 440, 250, 250);
@@ -143,7 +149,7 @@ public class NavigationActivity extends AppCompatActivity {
     }
 
     private void getImage() {
-        String url = "http://";
+        String url = HOST + API_GET_MAP;
 
         call(url, Collections.emptyMap(), new Callback() {
             @Override
@@ -174,7 +180,7 @@ public class NavigationActivity extends AppCompatActivity {
     }
 
     public void getCurrentPoint() {
-        String url = "";
+        String url = HOST + API_GET_POS;
         postJson(url, null, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
