@@ -2,6 +2,7 @@ package com.xuershangda.joystick.nav;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -92,13 +93,14 @@ public class NavigationActivity extends AppCompatActivity {
             @Override
             public void onActionDown(float x, float y) {
                 Log.d(TAG, "onActionDown: x=" + x + ", y=" + y);
-                if (endFlag.compareAndSet(false, false)) {
-                    goalStartX = x;
-                    goalStartY = y;
-                }
                 if (startFlag.compareAndSet(false, false)) {
                     startX = x;
                     startY = y;
+                    mFingerPaintImageView.setStrokeBlue(Color.BLUE);
+                }
+                if (endFlag.compareAndSet(false, false)) {
+                    goalStartX = x;
+                    goalStartY = y;
                 }
             }
 
@@ -110,17 +112,21 @@ public class NavigationActivity extends AppCompatActivity {
                     endX = x;
                     endY = y;
                     mFingerPaintImageView.clear();
-                    mFingerPaintImageView.setStrokeBlue();
+//                    mFingerPaintImageView.setStrokeBlue(Color.BLUE);
                     mFingerPaintImageView.drawPoint(startX, startY, START_POINT);
                     mFingerPaintImageView.drawLine(startX, startY, endX, endY, START_ORI);
+//                    mFingerPaintImageView.resetStroke();
                     mFingerPaintImageView.setInEditMode(false);
                 }
 
                 if (endFlag.compareAndSet(false, true)) {
                     goalEndX = x;
                     goalEndY = y;
+//                    mFingerPaintImageView.setStrokeBlack();
+                    mFingerPaintImageView.removeCube();
                     mFingerPaintImageView.drawPoint(goalStartX, goalStartY, END_POINT);
                     mFingerPaintImageView.drawLine(goalStartX, goalStartY, goalEndX, goalEndY, END_ORI);
+//                    mFingerPaintImageView.resetStroke();
                     mFingerPaintImageView.setInEditMode(false);
                 }
             }
@@ -136,16 +142,24 @@ public class NavigationActivity extends AppCompatActivity {
 
         findViewById(R.id.clear).setOnClickListener(v -> {
             this.mFingerPaintImageView.clear();
+            this.startX = 0;
+            this.startY = 0;
+            this.endX = 0;
+            this.endY = 0;
         });
 
         findViewById(R.id.set_start_position).setOnClickListener(v -> {
-//            this.mFingerPaintImageView.clear();
+            this.mFingerPaintImageView.clear();
             this.mFingerPaintImageView.setInEditMode(true);
             this.startFlag.set(false);
         });
 
         findViewById(R.id.set_endpoint).setOnClickListener(v -> {
 //            this.mFingerPaintImageView.clear();
+            if (this.startX == 0 || this.endX == 0) {
+                Toast.makeText(NavigationActivity.this, "请先标定机器人当前位置，设置起点和方向！", Toast.LENGTH_LONG).show();
+                return;
+            }
             this.mFingerPaintImageView.setInEditMode(true);
             this.endFlag.set(false);
         });

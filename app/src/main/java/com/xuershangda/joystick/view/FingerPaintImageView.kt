@@ -73,7 +73,7 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
     private var currentX = 0f
     private var currentY = 0f
 //    private var paths: MutableList<Pair<Path, Paint>> = mutableListOf()
-    private var pathMaps: MutableMap<String, Pair<Path, Paint>> = mutableMapOf()
+    private var pathMaps: MutableMap<String, Pair<Path, Paint>> = linkedMapOf()
     private var pathSets: MutableSet<String> = mutableSetOf()
 
     init {
@@ -132,7 +132,12 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
     }
 
 //    private fun getCurrentPath() = paths.lastOrNull()?.first
-    private fun getCurrentPath() = pathMaps.values.lastOrNull()?.first
+
+    // 使用有序map
+    private fun getCurrentPath(): Path? {
+        val name = pathMaps.keys.lastOrNull()
+        return pathMaps[name]?.first
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -151,7 +156,7 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
                 MotionEvent.ACTION_UP -> {
                     handleTouchEnd()
                     fingerTouchViewListener?.onActionUp(event.x, event.y)
-                    countDrawn++
+//                    countDrawn++
                     invalidate()
                 }
             }
@@ -222,9 +227,9 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
 
 //        paths.add(Path().also { it.moveTo(x, y) } to Paint(pathPaint))
-        pathMaps[name] = Path().also { it.moveTo(x, y) } to Paint(pathPaint)
-        val path = getCurrentPath()
-        path?.lineTo(xPos, yPos)
+        val path = Path().also { it.moveTo(x, y) }
+        pathMaps[name] = path to Paint(pathPaint)
+        path.lineTo(xPos, yPos)
         invalidate() // 调用这个才会开始绘制
     }
 
@@ -245,7 +250,6 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
 
         val pairs = pathMaps[name]
-
         pathMaps[name] = Path().also { it.moveTo(x, y) } to Paint(pathPaint)
         val path = getCurrentPath()
         path?.lineTo(xPos, yPos)
@@ -273,9 +277,16 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         resetStroke()
     }
 
-    fun setStrokeBlue() {
-        this.strokeColor = Color.BLUE
-        this.strokeWidth = 4F
+    fun removeCube() {
+        for (entry in pathMaps.entries) {
+            if (entry.key.startsWith("line")) {
+                pathMaps.remove(entry.key)
+            }
+        }
+    }
+
+    fun setStrokeBlue(color: Int) {
+        this.strokeColor = color
     }
 
     fun setStrokeBlack() {
@@ -375,7 +386,7 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
     fun undo(name: String) {
 //        paths.takeIf { it.isNotEmpty() }?.removeAt(paths.lastIndex)
         pathSets.remove(name)
-        countDrawn--
+//        countDrawn--
         invalidate()
     }
 
