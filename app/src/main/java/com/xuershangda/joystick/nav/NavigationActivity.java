@@ -371,12 +371,12 @@ public class NavigationActivity extends AppCompatActivity {
     }
 
     private void reportPosition(float x, float y, float angle, String url) {
-        Map<String, Float> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("x", x);
         params.put("y", y);
         params.put("angle", angle);
 
-        postJson(url, params, new Callback() {
+        call(url, params, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 Log.e(TAG, "onFailure: 上报位置错误。", e);
