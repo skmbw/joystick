@@ -40,6 +40,8 @@ import okhttp3.ResponseBody;
 
 import static com.xuershangda.joystick.nav.Consts.API_GET_MAP;
 import static com.xuershangda.joystick.nav.Consts.API_GET_POS;
+import static com.xuershangda.joystick.nav.Consts.API_SET_GOAL;
+import static com.xuershangda.joystick.nav.Consts.API_SET_POS;
 import static com.xuershangda.joystick.nav.Consts.HOST;
 
 public class NavigationActivity extends AppCompatActivity {
@@ -60,6 +62,8 @@ public class NavigationActivity extends AppCompatActivity {
 
     private double screenWidth;
     private double mapWidth;
+    private double mapHeight;
+    private double scaleRate;
 
     private static final String START_POINT = "start_point";
     private static final String START_ORI = "start_ori";
@@ -117,6 +121,9 @@ public class NavigationActivity extends AppCompatActivity {
                     mFingerPaintImageView.drawLine(startX, startY, endX, endY, START_ORI);
 //                    mFingerPaintImageView.resetStroke();
                     mFingerPaintImageView.setInEditMode(false);
+                    // 获取终点在以起点为原点的坐标系的角度，顺时针
+                    float angle = getAngle(startX, startY, endX, endY);
+                    setStartPoint(startX, startY, angle);
                 }
 
                 if (endFlag.compareAndSet(false, true)) {
@@ -128,6 +135,8 @@ public class NavigationActivity extends AppCompatActivity {
                     mFingerPaintImageView.drawLine(goalStartX, goalStartY, goalEndX, goalEndY, END_ORI);
 //                    mFingerPaintImageView.resetStroke();
                     mFingerPaintImageView.setInEditMode(false);
+                    float angle = getAngle(goalStartX, goalStartY, goalEndX, goalEndY);
+                    setEndPoint(startX, startY, angle);
                 }
             }
         });
@@ -193,6 +202,9 @@ public class NavigationActivity extends AppCompatActivity {
                 if (body != null) {
                     InputStream stream = body.byteStream();
                     final Bitmap bitmap = BitmapFactory.decodeStream(stream);
+                    mapWidth = bitmap.getWidth();
+                    mapHeight = bitmap.getHeight();
+                    scaleRate = getScaleRate();
                     runOnUiThread(() -> {
                         mFingerPaintImageView.setImageBitmap(bitmap);
                     });
@@ -223,8 +235,10 @@ public class NavigationActivity extends AppCompatActivity {
                 if (body != null) {
                     byte[] bytes = body.bytes();
                     JSONObject jsonObject = (JSONObject) JSON.parse(bytes);
-                    float x = jsonObject.getFloatValue("piexl_x");
-                    float y = jsonObject.getFloatValue("piexl_y");
+                    float pixelX = jsonObject.getFloatValue("piexl_x");
+                    float pixelY = jsonObject.getFloatValue("piexl_y");
+                    float x = getMapPixelPoint(pixelX);
+                    float y = getMapPixelPoint(pixelY);
                     mFingerPaintImageView.drawPoint(x, y, CURRENT_POINT);
                 } else {
                     Log.e(TAG, "onResponse: 获取位置响应为空。");
@@ -236,22 +250,117 @@ public class NavigationActivity extends AppCompatActivity {
         });
     }
 
-    public void setStartPoint() {
+    /**
+     * 获取以原点为坐标系的，顺时针旋转的角度值
+     *
+     * @param zeroX 原点x坐标
+     * @param zeroY 原点y坐标
+     * @param pointX x坐标
+     * @param pointY y坐标
+     * @return 角度值
+     */
+    private float getAngle(float zeroX, float zeroY, float pointX, float pointY) {
+        int quadrant = getQuadrant(zeroX, zeroY, pointX, pointY);
+        switch (quadrant) {
+            case 1:
+                // 对边
+                double oppositeSide = pointX - zeroX; // 默认提升精度
+                // 邻边
+                double adjacentSide = zeroY - pointY;
+                return computeAngle(oppositeSide, adjacentSide);
+            case 2:
+                oppositeSide = zeroY - pointY;
+                adjacentSide = zeroX - pointX;
+                return computeAngle(oppositeSide, adjacentSide);
+            case 3:
+                oppositeSide = zeroX - pointX;
+                adjacentSide = pointY - zeroY;
+                return computeAngle(oppositeSide, adjacentSide);
+            case 4:
+                oppositeSide = pointY - zeroY;
+                adjacentSide = pointX - zeroX;
+                return computeAngle(oppositeSide, adjacentSide);
+            case 5:
+                return 0; // return 就是break的语义
+            case 6:
+                return 90;
+            case 7:
+                return 180;
+            case 8:
+                return 270;
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * 根据正切值计算角度
+     *
+     * @param oppositeSide 对边
+     * @param adjacentSide 邻边
+     * @return 角度
+     */
+    private float computeAngle(double oppositeSide, double adjacentSide) {
+        double tana = BigDecimalUtils.divide(oppositeSide, adjacentSide);
+        double piAngle = Math.atan(tana);
+        double angle = BigDecimalUtils.divide(BigDecimalUtils.multiply(piAngle, 180D), Math.PI);
+        return (float) angle;
+    }
+
+    /**
+     * 获取点(pointX, pointY)所在的象限
+     *
+     * @param zeroX 原点X
+     * @param zeroY 原点Y
+     * @param pointX x point
+     * @param pointY y point
+     * @return 象限
+     */
+    private int getQuadrant(float zeroX, float zeroY, float pointX, float pointY) {
+        if (pointX > zeroX) { // 在1、4象限
+            if (pointY < zeroY) { // 在第一象限
+                return 1;
+            } else if (pointY > zeroY) { // 第四象限
+                return 4;
+            } else { // 在Y+轴上
+                return 6;
+            }
+        } else if (pointX < zeroX) { // 在2、3象限
+            if (pointY < zeroY) { // 在第2象限
+                return 2;
+            } else if (pointY > zeroY) { // 在第三象限
+                return 3;
+            } else { // 在Y-轴上
+                return 8;
+            }
+        } else {
+            if (pointY < zeroY) { // 在X+轴上
+                return 5;
+            } else if (pointY > zeroY) { // 在X-轴上
+                return 7;
+            } else { // 原点
+                return 9;
+            }
+        }
+    }
+
+    public void setStartPoint(float x, float y, float angle) {
         Log.i(TAG, "setStartPoint: 设置起点位置。");
-        reportPosition();
+        String url = HOST + API_SET_POS;
+        reportPosition(x, y, angle, url);
     }
 
-    public void setEndPoint() {
+    public void setEndPoint(float x, float y, float angle) {
         Log.i(TAG, "setEndPoint: 设置终点位置。");
-        reportPosition();
+        String url = HOST + API_SET_GOAL;
+        reportPosition(x, y, angle, url);
     }
 
-    private void reportPosition() {
-        String url = "http://";
+    private void reportPosition(float x, float y, float angle, String url) {
         Map<String, Float> params = new HashMap<>();
-        params.put("x", 23F);
-        params.put("y", 33F);
-        params.put("angle", 234F);
+        params.put("x", x);
+        params.put("y", y);
+        params.put("angle", angle);
 
         postJson(url, params, new Callback() {
             @Override
@@ -369,13 +478,13 @@ public class NavigationActivity extends AppCompatActivity {
     }
 
     /**
-     * 获得缩放比率，以屏幕的宽度为1，用地图图片宽度除以屏幕宽度。
+     * 获得缩放比率，以屏幕的宽度为1，用屏幕宽度（现在是1080）除以地图图片宽度。
      *
      * @return 地图缩放比率
      */
     public double getScaleRate() {
         if (mapWidth != 0) {
-            return BigDecimalUtils.divide(mapWidth, screenWidth, 2);
+            return BigDecimalUtils.divide(screenWidth, mapWidth, 2);
         }
         return 0;
     }
@@ -386,7 +495,7 @@ public class NavigationActivity extends AppCompatActivity {
      * @param xy x轴坐标或y轴坐标
      * @return 屏幕坐标转换为地图像素坐标
      */
-    public double getMapPixelPoint(double xy) {
-        return BigDecimalUtils.multiply(xy, getScaleRate());
+    public float getMapPixelPoint(double xy) {
+        return (float) BigDecimalUtils.multiply(xy, scaleRate);
     }
 }
