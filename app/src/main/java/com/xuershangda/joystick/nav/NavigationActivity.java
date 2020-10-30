@@ -26,6 +26,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import okhttp3.Call;
@@ -70,6 +73,8 @@ public class NavigationActivity extends AppCompatActivity {
     private static final String END_POINT = "end_point";
     private static final String END_ORI = "end_ori";
     private static final String CURRENT_POINT = "current_point";
+
+    private ScheduledExecutorService scheduledExecutorService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,10 +121,8 @@ public class NavigationActivity extends AppCompatActivity {
                     endX = x;
                     endY = y;
                     mFingerPaintImageView.clear();
-//                    mFingerPaintImageView.setStrokeBlue(Color.BLUE);
                     mFingerPaintImageView.drawPoint(startX, startY, START_POINT);
                     mFingerPaintImageView.drawLine(startX, startY, endX, endY, START_ORI);
-//                    mFingerPaintImageView.resetStroke();
                     mFingerPaintImageView.setInEditMode(false);
                     // 获取终点在以起点为原点的坐标系的角度，顺时针
                     float angle = getAngle(startX, startY, endX, endY);
@@ -129,11 +132,9 @@ public class NavigationActivity extends AppCompatActivity {
                 if (endFlag.compareAndSet(false, true)) {
                     goalEndX = x;
                     goalEndY = y;
-//                    mFingerPaintImageView.setStrokeBlack();
                     mFingerPaintImageView.removeCube();
                     mFingerPaintImageView.drawPoint(goalStartX, goalStartY, END_POINT);
                     mFingerPaintImageView.drawLine(goalStartX, goalStartY, goalEndX, goalEndY, END_ORI);
-//                    mFingerPaintImageView.resetStroke();
                     mFingerPaintImageView.setInEditMode(false);
                     float angle = getAngle(goalStartX, goalStartY, goalEndX, goalEndY);
                     setEndPoint(startX, startY, angle);
@@ -142,7 +143,10 @@ public class NavigationActivity extends AppCompatActivity {
         });
 
         getImage();
-        getCurrentPoint();
+
+        // 轮询获取当前点
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService.schedule(this::getCurrentPoint, 2, TimeUnit.SECONDS);
 
         findViewById(R.id.click).setOnClickListener(v -> {
             this.mFingerPaintImageView.drawPoint(300, 440, "test");
@@ -261,6 +265,7 @@ public class NavigationActivity extends AppCompatActivity {
      */
     private float getAngle(float zeroX, float zeroY, float pointX, float pointY) {
         int quadrant = getQuadrant(zeroX, zeroY, pointX, pointY);
+        Log.i(TAG, "getAngle: quadrant=" + quadrant);
         switch (quadrant) {
             case 1:
                 // 对边
@@ -304,6 +309,7 @@ public class NavigationActivity extends AppCompatActivity {
         double tana = BigDecimalUtils.divide(oppositeSide, adjacentSide);
         double piAngle = Math.atan(tana);
         double angle = BigDecimalUtils.divide(BigDecimalUtils.multiply(piAngle, 180D), Math.PI);
+        Log.i(TAG, "computeAngle: angle=" + angle);
         return (float) angle;
     }
 
@@ -347,13 +353,21 @@ public class NavigationActivity extends AppCompatActivity {
     public void setStartPoint(float x, float y, float angle) {
         Log.i(TAG, "setStartPoint: 设置起点位置。");
         String url = HOST + API_SET_POS;
-        reportPosition(x, y, angle, url);
+        try {
+            reportPosition(x, y, angle, url);
+        } catch (Exception e) {
+            Log.e(TAG, "setStartPoint: error.", e);
+        }
     }
 
     public void setEndPoint(float x, float y, float angle) {
         Log.i(TAG, "setEndPoint: 设置终点位置。");
         String url = HOST + API_SET_GOAL;
-        reportPosition(x, y, angle, url);
+        try {
+            reportPosition(x, y, angle, url);
+        } catch (Exception e) {
+            Log.e(TAG, "setEndPoint: error.", e);
+        }
     }
 
     private void reportPosition(float x, float y, float angle, String url) {
@@ -497,5 +511,13 @@ public class NavigationActivity extends AppCompatActivity {
      */
     public float getMapPixelPoint(double xy) {
         return (float) BigDecimalUtils.multiply(xy, scaleRate);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (this.scheduledExecutorService != null && !this.scheduledExecutorService.isShutdown()) {
+            this.scheduledExecutorService.shutdown();
+        }
     }
 }
