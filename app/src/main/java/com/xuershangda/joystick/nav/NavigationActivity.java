@@ -389,11 +389,7 @@ public class NavigationActivity extends AppCompatActivity {
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 ResponseBody body = response.body();
                 if (body != null) {
-                    InputStream stream = body.byteStream();
-//                    final Bitmap bitmap = BitmapFactory.decodeStream(stream);
-//                    runOnUiThread(() -> {
-//                        mFingerPaintImageView.setImageBitmap(bitmap);
-//                    });
+//                    InputStream stream = body.byteStream();
                 } else {
                     Log.e(TAG, "onResponse: 上报位置响应为空。");
                     runOnUiThread(() -> {
