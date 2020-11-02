@@ -136,7 +136,7 @@ public class BigDecimalUtils {
 	public static double multiply(Double v1, Double v2, int scale) {
 		BigDecimal b1 = new BigDecimal(v1.toString());
 		BigDecimal b2 = new BigDecimal(v2.toString());
-		return b1.multiply(b2, MathContext.DECIMAL128).setScale(scale).doubleValue();
+		return b1.multiply(b2, MathContext.DECIMAL128).setScale(scale, BigDecimal.ROUND_HALF_UP).doubleValue();
 	}
 	
 	/**

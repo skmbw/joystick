@@ -497,7 +497,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        speed = BigDecimalUtils.multiply(speed, SPEED_RATE);
+        // 内部乘积有效数字是34位
+        speed = BigDecimalUtils.multiply(speed, SPEED_RATE, 2);
 
         speeds[0] = speed;
         speeds[1] = turn;
