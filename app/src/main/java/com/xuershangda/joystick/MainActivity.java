@@ -44,7 +44,7 @@ import static com.xuershangda.joystick.nav.Consts.SPEED_RATE;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private Double mBaseSpeed = 0.05D;
+    private Double mBaseSpeed = 0.04D;
     private Double mBaseTurn = 0.1D;
     private Double mSpeed = 0D;
     private Double mTurnSpeed = 0D;
@@ -141,13 +141,14 @@ public class MainActivity extends AppCompatActivity {
                 Double angularSpeed = speeds[1];
 
                 try {
-//                    Log.d(TAG, "onTouch: mSpeed=" + mSpeed + ", mTurnSpeed="
-//                            + mTurnSpeed + ", linearSpeed=" + linearSpeed + ", angularSpeed=" + angularSpeed);
+                    Log.d(TAG, "onTouch: mSpeed=" + mSpeed + ", mTurnSpeed="
+                            + mTurnSpeed + ", linearSpeed=" + linearSpeed + ", angularSpeed=" + angularSpeed);
                     mSpeed = linearSpeed;
+
                     mTurnSpeed = angularSpeed;
-//                    Log.d(TAG, "onTouch: 插入控制命令到队列成功。");
+                    // 显示仍然显示1以内的范围的速度，但是发送的时候，乘以0.5，降低苏苏
+                    speeds[0] = BigDecimalUtils.multiply(speeds[0], SPEED_RATE, 2);
                     mBlockingQueue.put(speeds);
-//                    Log.d(TAG, "onTouch: task size=[" + mBlockingDeque.size() + "]");
                 } catch (Exception e) {
                     Log.e(TAG, "onTouch: 产生任务错误。", e);
                 }
@@ -405,49 +406,6 @@ public class MainActivity extends AppCompatActivity {
                     });
                 }
             }, 0, 500, TimeUnit.MILLISECONDS);
-//            for (;;) {
-//                try {
-//                    Double[] speeds = mBlockingDeque.take();
-//
-//                    Log.d(TAG, "run: 从队列中获取控制命令成功。taskNumber=[" + mBlockingDeque.size() + "]");
-//
-//                    Double leftSpeed = speeds[0];
-//                    Double rightSpeed = speeds[1];
-////                    Log.d(TAG, "onTouch: WheelSpeed=" + leftSpeed + ", AngularSpeed=" + rightSpeed);
-//
-//                    // 记录上一次的速度
-//                    mSpeed = leftSpeed;
-//                    mTurnSpeed = rightSpeed;
-//                    // 可以换个地方
-//                    runOnUiThread(() -> {
-//                        mLeftWheel.setText(String.format("%s%s", getString(R.string.leftWheel), leftSpeed));
-//                        mRightWheel.setText(String.format("%s%s", getString(R.string.rightWheel), rightSpeed));
-//
-//                        String direct;
-//                        if (rightSpeed > 0) {
-//                            direct = "左转";
-//                        } else if (rightSpeed < 0) {
-//                            direct = "右转";
-//                        } else {
-//                            direct = "直行";
-//                        }
-//                        mDirectView.setText(String.format("%s%s", getString(R.string.direction), direct));
-//                    });
-//
-//                    ByteBuffer byteBuffer = createMessageContent(mSpeed, mTurnSpeed);
-//                    try {
-//                        mSocketChannel.write(byteBuffer);
-//                    } catch (IOException | NotYetConnectedException e) {
-//                        Log.e(TAG, "send message error.", e);
-//                        connect();
-//                        runOnUiThread(() -> {
-//                            Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-//                        });
-//                    }
-//                } catch (InterruptedException e) {
-//                    Log.e(TAG, "loop run: 阻塞队列出错。", e);
-//                }
-//            }
         }
     }
 
@@ -497,22 +455,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // 内部乘积有效数字是34位
-        speed = BigDecimalUtils.multiply(speed, SPEED_RATE, 2);
-
         speeds[0] = speed;
         speeds[1] = turn;
 
         return speeds;
     }
-
-//    private static class SpeedDirectTask implements Runnable {
-//
-//        @Override
-//        public void run() {
-//
-//        }
-//    }
 
     private static class StartLoopEventHandler extends Handler {
         private volatile boolean init = false;
