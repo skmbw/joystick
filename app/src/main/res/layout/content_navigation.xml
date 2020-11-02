@@ -17,13 +17,13 @@
         android:src="@drawable/tianzige"
         app:inEditMode="true"/>
 
-    <Button
-        android:id="@+id/click"
-        android:layout_marginTop="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/click">
-    </Button>
+<!--    <Button-->
+<!--        android:id="@+id/click"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/click">-->
+<!--    </Button>-->
 
     <Button
         android:id="@+id/set_start_position"

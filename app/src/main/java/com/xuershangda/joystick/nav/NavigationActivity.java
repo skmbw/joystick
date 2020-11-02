@@ -148,10 +148,10 @@ public class NavigationActivity extends AppCompatActivity {
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         scheduledExecutorService.schedule(this::getCurrentPoint, 2, TimeUnit.SECONDS);
 
-        findViewById(R.id.click).setOnClickListener(v -> {
-            this.mFingerPaintImageView.drawPoint(300, 440, "test");
-            this.mFingerPaintImageView.drawLine(300, 440, 250, 250, "test");
-        });
+//        findViewById(R.id.click).setOnClickListener(v -> {
+//            this.mFingerPaintImageView.drawPoint(300, 440, "test");
+//            this.mFingerPaintImageView.drawLine(300, 440, 250, 250, "test");
+//        });
 
         findViewById(R.id.clear).setOnClickListener(v -> {
             this.mFingerPaintImageView.clear();
