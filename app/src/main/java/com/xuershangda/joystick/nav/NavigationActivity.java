@@ -146,7 +146,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         // 轮询获取当前点
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        scheduledExecutorService.schedule(this::getCurrentPoint, 2, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(this::getCurrentPoint, 2, 2, TimeUnit.SECONDS);
 
 //        findViewById(R.id.click).setOnClickListener(v -> {
 //            this.mFingerPaintImageView.drawPoint(300, 440, "test");
