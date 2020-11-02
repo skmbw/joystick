@@ -13,7 +13,7 @@ import java.math.RoundingMode;
  * BigDecimal.ROUND_DOWN 向下取整（截断）<br>
  * 
  * BigDecimal.ROUND_HALF_DOWN 五舍六入<br>
- * BigDecimal.ROUND_HALF_EVEN 四舍六入，逢五奇进偶舍<br>
+ * BigDecimal.ROUND_HALF_EVEN 四舍六入五考虑，五后非零就进一，五后为零看奇偶，五前为偶应舍去，五前为奇要进一<br>
  * BigDecimal.ROUND_HALF_UP 四舍五入<br>
  * 
  * BigDecimal.ROUND_FLOOR 负的向上取整同ROUND_UP；正的直接截断，同ROUND_DOWN。和ROUND_CEILING刚好相反<br>
