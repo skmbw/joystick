@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import com.xuershangda.joystick.controller.DefaultController;
 import com.xuershangda.joystick.listener.JoystickTouchViewListener;
+import com.xuershangda.joystick.nav.Consts;
 import com.xuershangda.joystick.utils.BigDecimalUtils;
 
 import java.io.IOException;
@@ -288,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
                 mSocketChannel.register(mSelector, SelectionKey.OP_CONNECT);
                 // 发起连接
 //                mSocketChannel.connect(new InetSocketAddress("10.1.163.96", 9090));
-                mSocketChannel.connect(new InetSocketAddress("10.1.101.31", 9090));
+                mSocketChannel.connect(new InetSocketAddress(Consts.IP, Consts.TCP_PORT));
             } catch (Exception e) {
                 Log.e(TAG, "connect: error", e);
             }
