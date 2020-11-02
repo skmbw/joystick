@@ -13,4 +13,5 @@ public class Consts {
     public static final String API_GET_MAPINFO = "robot/getMapInfos";
     public static final String API_SET_POS = "robot/setPosition";
     public static final String API_SET_GOAL = "robot/setGoal";
+    public static final double SPEED_RATE = 0.4D;
 }

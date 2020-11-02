@@ -40,6 +40,8 @@ import edu.wpi.rail.jrosbridge.JRosbridge;
 import edu.wpi.rail.jrosbridge.messages.geometry.Twist;
 import edu.wpi.rail.jrosbridge.messages.geometry.Vector3;
 
+import static com.xuershangda.joystick.nav.Consts.SPEED_RATE;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private Double mBaseSpeed = 0.05D;
@@ -494,6 +496,8 @@ public class MainActivity extends AppCompatActivity {
                 turn = BigDecimalUtils.subtract(mTurnSpeed, mBaseTurn);
             }
         }
+
+        speed = BigDecimalUtils.multiply(speed, SPEED_RATE);
 
         speeds[0] = speed;
         speeds[1] = turn;
