@@ -98,7 +98,21 @@ public class BigDecimalUtils {
 		BigDecimal b2 = new BigDecimal(subtrahend.toString());
 		return b1.subtract(b2, context).doubleValue();
 	}
-	
+
+	/**
+	 * 提供精确的减法运算，v1-v2。
+	 * @param v1 被减数
+	 * @param subtrahend 减数
+	 * @param scale 有效数字
+	 *
+	 * @return 两个参数的差
+	 */
+	public static double subtract(Double v1, Double subtrahend, int scale) {
+		BigDecimal b1 = new BigDecimal(v1.toString());
+		BigDecimal b2 = new BigDecimal(subtrahend.toString());
+		return b1.subtract(b2).setScale(scale, RoundingMode.HALF_UP).doubleValue();
+	}
+
 	/**
 	 * 提供精确的减法运算，v1-v2。
 	 * @param v1 被减数

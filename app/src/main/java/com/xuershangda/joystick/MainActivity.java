@@ -41,6 +41,7 @@ import edu.wpi.rail.jrosbridge.messages.geometry.Twist;
 import edu.wpi.rail.jrosbridge.messages.geometry.Vector3;
 
 import static com.xuershangda.joystick.nav.Consts.SPEED_RATE;
+import static java.math.RoundingMode.HALF_UP;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -135,10 +136,60 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-//                Log.d(TAG, "onTouch right: " + horizontalPercent + ", " + verticalPercent);
                 Double[] speeds = computeSpeed(horizontalPercent, verticalPercent);
-                Double linearSpeed = speeds[0];
-                Double angularSpeed = speeds[1];
+                final Double linearSpeed = speeds[0];
+                final Double angularSpeed = speeds[1];
+
+                if (BigDecimalUtils.subtract(linearSpeed, mSpeed) > 0.1D) {
+                    Log.d(TAG, "onTouch: 速度变化太大，加入两次缓冲速度。");
+                    mScheduler.schedule(() -> {
+                        double tempSpeed = BigDecimalUtils.add(mSpeed, 0.035D, 2, HALF_UP);
+                        mSpeed = tempSpeed;
+                        mTurnSpeed = angularSpeed;
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
+                    }, 200, TimeUnit.MILLISECONDS);
+
+                    mScheduler.schedule(() -> {
+                        double tempSpeed = BigDecimalUtils.add(mSpeed, 0.035D, 2, HALF_UP);
+                        mSpeed = tempSpeed;
+                        mTurnSpeed = angularSpeed;
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
+                    }, 200, TimeUnit.MILLISECONDS);
+                    return;
+                } else if (BigDecimalUtils.subtract(linearSpeed, mSpeed) < -0.1D) {
+                    mScheduler.schedule(() -> {
+                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, 0.035D, 2, HALF_UP);
+                        if (tempSpeed <= 0) {
+                            tempSpeed = 0D;
+                        }
+                        mSpeed = tempSpeed;
+                        mTurnSpeed = angularSpeed;
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
+                    }, 200, TimeUnit.MILLISECONDS);
+
+                    mScheduler.schedule(() -> {
+                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, 0.035D, 2, HALF_UP);
+                        mSpeed = tempSpeed;
+                        if (tempSpeed <= 0) {
+                            tempSpeed = 0D;
+                        }
+                        mTurnSpeed = angularSpeed;
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
+                    }, 200, TimeUnit.MILLISECONDS);
+                    return;
+                }
 
                 try {
                     Log.d(TAG, "onTouch: mSpeed=" + mSpeed + ", mTurnSpeed="
@@ -146,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
                     mSpeed = linearSpeed;
 
                     mTurnSpeed = angularSpeed;
-                    // 显示仍然显示1以内的范围的速度，但是发送的时候，乘以0.5，降低苏苏
+                    // 显示仍然显示1以内的范围的速度，但是发送的时候，乘以一个系数，降低速度
                     speeds[0] = BigDecimalUtils.multiply(speeds[0], SPEED_RATE, 2);
                     mBlockingQueue.put(speeds);
                 } catch (Exception e) {
@@ -167,6 +218,47 @@ public class MainActivity extends AppCompatActivity {
                 mStop.set(2);
                 // 发送最后一个指令，停止运动
                 try {
+                    double unit = BigDecimalUtils.divide(mSpeed, 4D, 2);
+
+                    // 为了线性减速，不一下子从某一速度减为0，中间添加三个过度速度，没200毫秒发送一次
+                    // 1
+                    mScheduler.schedule(() -> {
+                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit, 2);
+                        if (tempSpeed <= 0) {
+                            tempSpeed = 0;
+                        }
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
+                    }, 200, TimeUnit.MILLISECONDS);
+
+                    // 2
+                    mScheduler.schedule(() -> {
+                        double unit2 = BigDecimalUtils.add(unit, unit, 2, HALF_UP);
+                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit2, 2);
+                        if (tempSpeed <= 0) {
+                            tempSpeed = 0;
+                        }
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
+                    }, 200, TimeUnit.MILLISECONDS);
+
+                    // 3
+                    mScheduler.schedule(() -> {
+                        double unit3 = BigDecimalUtils.multiply(unit, 3D, 2);
+                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit3, 2);
+                        if (tempSpeed <= 0) {
+                            tempSpeed = 0;
+                        }
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
+                    }, 200, TimeUnit.MILLISECONDS);
+
                     mBlockingQueue.put(new Double[]{0D, 0D});
                 } catch (InterruptedException e) {
                     Log.i(TAG, "onReset: stop the robot InterruptedException.");
