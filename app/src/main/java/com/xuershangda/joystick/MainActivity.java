@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView mDirectView;
     private TextView mLeftWheel;
     private TextView mRightWheel;
-//    private Handler mHandler;
     private StartLoopEventHandler mStartLoopEventHandler;
     private RobotTeleopTask mTeleopTask;
 
@@ -136,6 +135,14 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
+                // 判断schedule中是否有任务在运行
+//                if (mScheduler) {
+//
+//                }
+                if (!mBlockingQueue.isEmpty()) { // 有指令未发，就放弃
+                    return;
+                }
+
                 Double[] speeds = computeSpeed(horizontalPercent, verticalPercent);
                 final Double linearSpeed = speeds[0];
                 final Double angularSpeed = speeds[1];
@@ -147,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
                         mSpeed = tempSpeed;
                         mTurnSpeed = angularSpeed;
                         try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
                         } catch (InterruptedException ignored) {
                         }
                     }, 200, TimeUnit.MILLISECONDS);
@@ -157,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
                         mSpeed = tempSpeed;
                         mTurnSpeed = angularSpeed;
                         try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
                         } catch (InterruptedException ignored) {
                         }
                     }, 200, TimeUnit.MILLISECONDS);
@@ -171,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
                         mSpeed = tempSpeed;
                         mTurnSpeed = angularSpeed;
                         try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
                         } catch (InterruptedException ignored) {
                         }
                     }, 200, TimeUnit.MILLISECONDS);
@@ -184,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         mTurnSpeed = angularSpeed;
                         try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
                         } catch (InterruptedException ignored) {
                         }
                     }, 200, TimeUnit.MILLISECONDS);
