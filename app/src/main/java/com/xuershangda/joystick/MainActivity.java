@@ -105,10 +105,6 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                if (!mBlockingQueue.isEmpty()) { // 有指令未发，就放弃
-                    return;
-                }
-
                 Double[] speeds = computeSpeed(horizontalPercent, verticalPercent);
                 final Double linearSpeed = speeds[0];
                 final Double angularSpeed = speeds[1];
