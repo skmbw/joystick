@@ -111,9 +111,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if (BigDecimalUtils.subtract(linearSpeed, mSpeed) > 0.1D) {
                     Log.d(TAG, "onTouch: 速度变化太大，加入两次缓冲速度。");
-                    mScheduler.schedule(() -> {
-
-                    }, 200, TimeUnit.MILLISECONDS);
 
                     double tempSpeed = BigDecimalUtils.add(mSpeed, 0.035D, 2, HALF_UP);
                     mSpeed = tempSpeed;
