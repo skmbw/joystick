@@ -71,39 +71,9 @@ public class MainActivity extends AppCompatActivity {
 
         mBlockingQueue = new LinkedBlockingDeque<>();
         mDirectView = findViewById(R.id.direction);
-//        Button speedUp = findViewById(R.id.speedUp);
-//        Button speedDown = findViewById(R.id.speedDown);
         mLeftWheel = findViewById(R.id.leftWheel);
         mRightWheel = findViewById(R.id.rightWheel);
 
-//        speedUp.setOnClickListener(view -> {
-//            mSpeed = BigDecimalUtils.add(mSpeed, 0.1);
-//            if (mSpeed > 2D) {
-//                mSpeed = 2D;
-//            }
-//            Log.d(TAG, "speedUp: 加速0.1D. mSpeed=" + mSpeed);
-//            mStop.set(1);
-//            try {
-//                mBlockingQueue.put(new Double[]{mSpeed, mTurnSpeed});
-//            } catch (InterruptedException e) {
-//                Log.i(TAG, "Speed Up the robot InterruptedException.");
-//            }
-//        });
-//        speedDown.setOnClickListener(view -> {
-//            mSpeed = BigDecimalUtils.subtract(mSpeed, 0.1);
-//            if (mSpeed < 0) {
-//                mSpeed = 0D;
-//            }
-//            Log.d(TAG, "speedDown: 减速0.1D. mSpeed=" + mSpeed);
-//            mStop.set(1);
-//            try {
-//                mBlockingQueue.put(new Double[]{mSpeed, mTurnSpeed});
-//            } catch (InterruptedException e) {
-//                Log.i(TAG, "Speed Down the robot InterruptedException.");
-//            }
-//        });
-
-//        mHandler = new UpdateViewHandler(this);
         mStartLoopEventHandler = new StartLoopEventHandler(this);
 
         // 启动通信任务
@@ -135,10 +105,6 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                // 判断schedule中是否有任务在运行
-//                if (mScheduler) {
-//
-//                }
                 if (!mBlockingQueue.isEmpty()) { // 有指令未发，就放弃
                     return;
                 }
@@ -150,51 +116,48 @@ public class MainActivity extends AppCompatActivity {
                 if (BigDecimalUtils.subtract(linearSpeed, mSpeed) > 0.1D) {
                     Log.d(TAG, "onTouch: 速度变化太大，加入两次缓冲速度。");
                     mScheduler.schedule(() -> {
-                        double tempSpeed = BigDecimalUtils.add(mSpeed, 0.035D, 2, HALF_UP);
-                        mSpeed = tempSpeed;
-                        mTurnSpeed = angularSpeed;
-                        try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
-                        } catch (InterruptedException ignored) {
-                        }
+
                     }, 200, TimeUnit.MILLISECONDS);
 
-                    mScheduler.schedule(() -> {
-                        double tempSpeed = BigDecimalUtils.add(mSpeed, 0.035D, 2, HALF_UP);
-                        mSpeed = tempSpeed;
-                        mTurnSpeed = angularSpeed;
-                        try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
-                        } catch (InterruptedException ignored) {
-                        }
-                    }, 200, TimeUnit.MILLISECONDS);
+                    double tempSpeed = BigDecimalUtils.add(mSpeed, 0.035D, 2, HALF_UP);
+                    mSpeed = tempSpeed;
+                    mTurnSpeed = angularSpeed;
+                    try {
+                        mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
+                    } catch (InterruptedException ignored) {
+                    }
+
+                    tempSpeed = BigDecimalUtils.add(mSpeed, 0.035D, 2, HALF_UP);
+                    mSpeed = tempSpeed;
+                    mTurnSpeed = angularSpeed;
+                    try {
+                        mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
+                    } catch (InterruptedException ignored) {
+                    }
                     return;
                 } else if (BigDecimalUtils.subtract(linearSpeed, mSpeed) < -0.1D) {
-                    mScheduler.schedule(() -> {
-                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, 0.035D, 2, HALF_UP);
-                        if (tempSpeed <= 0) {
-                            tempSpeed = 0D;
-                        }
-                        mSpeed = tempSpeed;
-                        mTurnSpeed = angularSpeed;
-                        try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
-                        } catch (InterruptedException ignored) {
-                        }
-                    }, 200, TimeUnit.MILLISECONDS);
-
-                    mScheduler.schedule(() -> {
-                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, 0.035D, 2, HALF_UP);
-                        mSpeed = tempSpeed;
-                        if (tempSpeed <= 0) {
-                            tempSpeed = 0D;
-                        }
-                        mTurnSpeed = angularSpeed;
-                        try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
-                        } catch (InterruptedException ignored) {
-                        }
-                    }, 200, TimeUnit.MILLISECONDS);
+                    // 1
+                    double tempSpeed = BigDecimalUtils.subtract(mSpeed, 0.035D, 2, HALF_UP);
+                    if (tempSpeed <= 0) {
+                        tempSpeed = 0D;
+                    }
+                    mSpeed = tempSpeed;
+                    mTurnSpeed = angularSpeed;
+                    try {
+                        mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
+                    } catch (InterruptedException ignored) {
+                    }
+                    // 2
+                    tempSpeed = BigDecimalUtils.subtract(mSpeed, 0.035D, 2, HALF_UP);
+                    mSpeed = tempSpeed;
+                    if (tempSpeed <= 0) {
+                        tempSpeed = 0D;
+                    }
+                    mTurnSpeed = angularSpeed;
+                    try {
+                        mBlockingQueue.put(new Double[]{tempSpeed, angularSpeed});
+                    } catch (InterruptedException ignored) {
+                    }
                     return;
                 }
 
@@ -229,42 +192,36 @@ public class MainActivity extends AppCompatActivity {
 
                     // 为了线性减速，不一下子从某一速度减为0，中间添加三个过度速度，没200毫秒发送一次
                     // 1
-                    mScheduler.schedule(() -> {
-                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit, 2);
-                        if (tempSpeed <= 0) {
-                            tempSpeed = 0;
-                        }
-                        try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
-                        } catch (InterruptedException ignored) {
-                        }
-                    }, 200, TimeUnit.MILLISECONDS);
+                    double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit, 2);
+                    if (tempSpeed <= 0) {
+                        tempSpeed = 0;
+                    }
+                    try {
+                        mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                    } catch (InterruptedException ignored) {
+                    }
 
                     // 2
-                    mScheduler.schedule(() -> {
-                        double unit2 = BigDecimalUtils.add(unit, unit, 2, HALF_UP);
-                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit2, 2);
-                        if (tempSpeed <= 0) {
-                            tempSpeed = 0;
-                        }
-                        try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
-                        } catch (InterruptedException ignored) {
-                        }
-                    }, 200, TimeUnit.MILLISECONDS);
+                    double unit2 = BigDecimalUtils.add(unit, unit, 2, HALF_UP);
+                    tempSpeed = BigDecimalUtils.subtract(mSpeed, unit2, 2);
+                    if (tempSpeed <= 0) {
+                        tempSpeed = 0;
+                    }
+                    try {
+                        mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                    } catch (InterruptedException ignored) {
+                    }
 
                     // 3
-                    mScheduler.schedule(() -> {
-                        double unit3 = BigDecimalUtils.multiply(unit, 3D, 2);
-                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit3, 2);
-                        if (tempSpeed <= 0) {
-                            tempSpeed = 0;
-                        }
-                        try {
-                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
-                        } catch (InterruptedException ignored) {
-                        }
-                    }, 200, TimeUnit.MILLISECONDS);
+                    double unit3 = BigDecimalUtils.multiply(unit, 3D, 2);
+                    tempSpeed = BigDecimalUtils.subtract(mSpeed, unit3, 2);
+                    if (tempSpeed <= 0) {
+                        tempSpeed = 0;
+                    }
+                    try {
+                        mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                    } catch (InterruptedException ignored) {
+                    }
 
                     mBlockingQueue.put(new Double[]{0D, 0D});
                 } catch (InterruptedException e) {
@@ -283,31 +240,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        defaultController.setLeftTouchViewListener(new JoystickTouchViewListener() {
-//            @Override
-//            public void onTouch(float horizontalPercent, float verticalPercent) {
-//                Log.d(TAG, "onTouch left: " + horizontalPercent + ", " + verticalPercent);
-//                speedUp(horizontalPercent, verticalPercent);
-//            }
-//
-//            @Override
-//            public void onReset() {
-//                // 回到控制点，停止
-//                Log.d(TAG, "onReset: left, driving mode = " + drivingMode.toString());
-//                // 重置显示信息
-//                drivingMode.set(0);
-//            }
-//
-//            @Override
-//            public void onActionDown() {
-//                Log.d(TAG, "onActionDown: left");
-//            }
-//
-//            @Override
-//            public void onActionUp() {
-//                Log.d(TAG, "onActionUp: left, stop.");
-//            }
-//        });
     }
 
     public ByteBuffer createMessageContent(double speed, double turn) {
@@ -429,26 +361,6 @@ public class MainActivity extends AppCompatActivity {
                                 msg.sendToTarget();
                             }
 
-//                            // 处理写事件，发送数据到服务端
-//                            if (key.isWritable()) {
-//                                Log.i(TAG, "startRosService: SocketChannel.write message.");
-//                                try {
-//                                    ByteBuffer byteBuffer = (ByteBuffer) key.attachment();
-//                                    while (byteBuffer.hasRemaining()) {
-//                                        mSocketChannel.write(byteBuffer);
-//                                    }
-//                                    // key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-//                                } catch (NotYetConnectedException e) {
-//                                    runOnUiThread(() -> {
-//                                        Toast.makeText(MainActivity.this, "网络连接错误。", Toast.LENGTH_SHORT).show();
-//                                    });
-//                                    connect();
-//                                }
-//                            }
-//                            // 处理读事件，服务端的返回数据，事实上，不需要处理，因为不与server交互
-//                            if (key.isReadable()) {
-//                                Log.d(TAG, "startRosService: OP_READ 事件不需要处理。");
-//                            }
                             // 删除当前键，避免重复消费
                             iterator.remove();
                         }
@@ -574,8 +486,6 @@ public class MainActivity extends AppCompatActivity {
                     if (!init) {
                         init = true;
                         MainActivity activity = mReference.get();
-//                        activity.mScheduler.scheduleAtFixedRate(() -> {
-//                        }, 0, 200, TimeUnit.MILLISECONDS);
                         Thread thread = new Thread(() -> {
                             activity.mTeleopTask.sendMessageLoop();
                         });
