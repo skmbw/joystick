@@ -192,35 +192,16 @@ public class MainActivity extends AppCompatActivity {
 
                     // 为了线性减速，不一下子从某一速度减为0，中间添加三个过度速度，没200毫秒发送一次
                     // 1
-                    double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit, 2);
-                    if (tempSpeed <= 0) {
-                        tempSpeed = 0;
-                    }
-                    try {
-                        mBlockingQueue.put(new Double[]{tempSpeed, 0D});
-                    } catch (InterruptedException ignored) {
-                    }
-
-                    // 2
-                    double unit2 = BigDecimalUtils.add(unit, unit, 2, HALF_UP);
-                    tempSpeed = BigDecimalUtils.subtract(mSpeed, unit2, 2);
-                    if (tempSpeed <= 0) {
-                        tempSpeed = 0;
-                    }
-                    try {
-                        mBlockingQueue.put(new Double[]{tempSpeed, 0D});
-                    } catch (InterruptedException ignored) {
-                    }
-
-                    // 3
-                    double unit3 = BigDecimalUtils.multiply(unit, 3D, 2);
-                    tempSpeed = BigDecimalUtils.subtract(mSpeed, unit3, 2);
-                    if (tempSpeed <= 0) {
-                        tempSpeed = 0;
-                    }
-                    try {
-                        mBlockingQueue.put(new Double[]{tempSpeed, 0D});
-                    } catch (InterruptedException ignored) {
+                    int count = 3;
+                    for (int i = 0; i < count; i++) {
+                        double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit * i, 2);
+                        if (tempSpeed <= 0) {
+                            tempSpeed = 0;
+                        }
+                        try {
+                            mBlockingQueue.put(new Double[]{tempSpeed, 0D});
+                        } catch (InterruptedException ignored) {
+                        }
                     }
 
                     mBlockingQueue.put(new Double[]{0D, 0D});
