@@ -350,6 +350,13 @@ public class NavigationActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * 设置起点位置
+     *
+     * @param x x轴坐标
+     * @param y y轴坐标
+     * @param angle 机器人面向的角度
+     */
     public void setStartPoint(float x, float y, float angle) {
         Log.i(TAG, "setStartPoint: 设置起点位置。");
         String url = HOST + API_SET_POS;
@@ -360,6 +367,13 @@ public class NavigationActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * 设置终点位置
+     *
+     * @param x x轴坐标
+     * @param y y轴坐标
+     * @param angle 机器人面向的角度
+     */
     public void setEndPoint(float x, float y, float angle) {
         Log.i(TAG, "setEndPoint: 设置终点位置。");
         String url = HOST + API_SET_GOAL;
@@ -370,6 +384,14 @@ public class NavigationActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * 上报，设置机器人的位置
+     *
+     * @param x x轴坐标
+     * @param y y轴坐标
+     * @param angle 机器人面向的角度
+     * @param url url
+     */
     private void reportPosition(float x, float y, float angle, String url) {
         Map<String, Object> params = new HashMap<>();
         params.put("piexl_x", x);
