@@ -186,12 +186,10 @@ public class MainActivity extends AppCompatActivity {
                 mTurnSpeed = 0D;
 
                 mStop.set(2);
-                // 发送最后一个指令，停止运动
                 try {
                     double unit = BigDecimalUtils.divide(mSpeed, 4D, 2);
 
-                    // 为了线性减速，不一下子从某一速度减为0，中间添加三个过度速度，没200毫秒发送一次
-                    // 1
+                    // 为了线性减速，不一下子从某一速度减为0，中间添加三个过度速度
                     int count = 3;
                     for (int i = 0; i < count; i++) {
                         double tempSpeed = BigDecimalUtils.subtract(mSpeed, unit * i, 2);
@@ -203,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
                         } catch (InterruptedException ignored) {
                         }
                     }
-
+                    // 发送最后一个指令，停止运动
                     mBlockingQueue.put(new Double[]{0D, 0D});
                 } catch (InterruptedException e) {
                     Log.i(TAG, "onReset: stop the robot InterruptedException.");
