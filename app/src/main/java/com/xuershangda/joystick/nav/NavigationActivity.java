@@ -372,9 +372,9 @@ public class NavigationActivity extends AppCompatActivity {
 
     private void reportPosition(float x, float y, float angle, String url) {
         Map<String, Object> params = new HashMap<>();
-        params.put("x", x);
-        params.put("y", y);
-        params.put("angle", angle);
+        params.put("piexl_x", x);
+        params.put("piexl_y", y);
+        params.put("raw", angle);
 
         call(url, params, new Callback() {
             @Override
