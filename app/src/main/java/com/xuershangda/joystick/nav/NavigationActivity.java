@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.widget.Toast;
 
@@ -212,7 +213,7 @@ public class NavigationActivity extends AppCompatActivity {
         Log.e("WangJ", "状态栏-方法1:" + statusBarHeight1);
 
 
-        super.onWindowFocusChanged(hasFocus);
+//        super.onWindowFocusChanged(hasFocus);
         Rect rectangle = new Rect();
         getWindow().getDecorView().getWindowVisibleDisplayFrame(rectangle);
         Log.d(TAG, "onWindowFocusChanged: 状态栏高度=" + rectangle.top);
@@ -228,15 +229,19 @@ public class NavigationActivity extends AppCompatActivity {
         Rect outRect1 = new Rect();
         getWindow().getDecorView().getWindowVisibleDisplayFrame(outRect1);
         Log.e(TAG, "应用区顶部" + outRect1.top);
-        Log.e("WangJ", "应用区高" + outRect1.height());
+        Log.e(TAG, "应用区高" + outRect1.height());
 
         // View绘制区域
         Rect outRect2 = new Rect();
         getWindow().findViewById(Window.ID_ANDROID_CONTENT).getDrawingRect(outRect2);
-        Log.e("WangJ", "View绘制区域顶部-错误方法：" + outRect2.top);   //不能像上边一样由outRect2.top获取，这种方式获得的top是0，可能是bug吧
-        int viewTop = getWindow().findViewById(Window.ID_ANDROID_CONTENT).getTop();   //要用这种方法
-        Log.e("WangJ", "View绘制区域顶部-正确方法：" + viewTop);
-        Log.e("WangJ", "View绘制区域高度：" + outRect2.height());
+        Log.e(TAG, "View绘制区域顶部-错误方法：" + outRect2.top);   //不能像上边一样由outRect2.top获取，这种方式获得的top是0，可能是bug吧
+        View view = getWindow().findViewById(Window.ID_ANDROID_CONTENT);
+        Log.d(TAG, "onWindowFocusChanged: " + view.getY());
+        Log.d(TAG, "onWindowFocusChanged: " + view.getHeight());
+        Log.d(TAG, "onWindowFocusChanged: " + view.getX());
+        int viewTop = view.getTop();   //要用这种方法
+        Log.e(TAG, "View绘制区域顶部-正确方法：" + viewTop);
+        Log.e(TAG, "View绘制区域高度：" + outRect2.height());
 
         /*
          * 获取标题栏高度——
