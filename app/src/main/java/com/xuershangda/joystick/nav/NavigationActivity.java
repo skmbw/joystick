@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import okhttp3.Call;
@@ -151,7 +150,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         // 轮询获取当前点
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        scheduledExecutorService.scheduleAtFixedRate(this::getCurrentPoint, 2, 2, TimeUnit.SECONDS);
+//        scheduledExecutorService.scheduleAtFixedRate(this::getCurrentPoint, 2, 2, TimeUnit.SECONDS);
 
 //        findViewById(R.id.click).setOnClickListener(v -> {
 //            this.mFingerPaintImageView.drawPoint(300, 440, "test");
@@ -200,6 +199,19 @@ public class NavigationActivity extends AppCompatActivity {
      */
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
+        /*
+         * 获取状态栏高度——方法1
+         */
+        int statusBarHeight1 = -1;
+        // 获取status_bar_height资源的ID
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            //根据资源ID获取响应的尺寸值
+            statusBarHeight1 = getResources().getDimensionPixelSize(resourceId);
+        }
+        Log.e("WangJ", "状态栏-方法1:" + statusBarHeight1);
+
+
         super.onWindowFocusChanged(hasFocus);
         Rect rectangle = new Rect();
         getWindow().getDecorView().getWindowVisibleDisplayFrame(rectangle);
@@ -207,28 +219,28 @@ public class NavigationActivity extends AppCompatActivity {
 
         statusBarHeight = rectangle.top;
 
-        //屏幕
+        // 屏幕
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
         Log.e(TAG, "屏幕高:" + dm.heightPixels);
 
-        //应用区域
+        // 应用区域
         Rect outRect1 = new Rect();
         getWindow().getDecorView().getWindowVisibleDisplayFrame(outRect1);
         Log.e(TAG, "应用区顶部" + outRect1.top);
         Log.e("WangJ", "应用区高" + outRect1.height());
 
-        //View绘制区域
-//        Rect outRect2 = new Rect();
-//        getWindow().findViewById(Window.ID_ANDROID_CONTENT).getDrawingRect(outRect2);
-//        Log.e("WangJ", "View绘制区域顶部-错误方法：" + outRect2.top);   //不能像上边一样由outRect2.top获取，这种方式获得的top是0，可能是bug吧
+        // View绘制区域
+        Rect outRect2 = new Rect();
+        getWindow().findViewById(Window.ID_ANDROID_CONTENT).getDrawingRect(outRect2);
+        Log.e("WangJ", "View绘制区域顶部-错误方法：" + outRect2.top);   //不能像上边一样由outRect2.top获取，这种方式获得的top是0，可能是bug吧
         int viewTop = getWindow().findViewById(Window.ID_ANDROID_CONTENT).getTop();   //要用这种方法
-        Log.e(TAG, "View绘制区域顶部-正确方法：" + viewTop);
-//        Log.e("WangJ", "View绘制区域高度：" + outRect2.height());
+        Log.e("WangJ", "View绘制区域顶部-正确方法：" + viewTop);
+        Log.e("WangJ", "View绘制区域高度：" + outRect2.height());
 
         /*
          * 获取标题栏高度——
-         * 标题栏高度 = View绘制区顶端位置 - 应用区顶端位置(也可以是状态栏高度，获取状态栏高度方法3中说过了)
+         * 标题栏高度 = View绘制区顶端位置 - 应用区顶端位置(也可以是状态栏高度)
          */
         titleBarHeight = viewTop - outRect1.top;
         Log.e(TAG, "标题栏高度-方法1：" + titleBarHeight);
