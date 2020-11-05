@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--<android.support.v4.widget.NestedScrollView-->
+<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    android:orientation="vertical"-->
+<!--    >-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -22,29 +29,38 @@
 <!--        android:text="@string/click">-->
 <!--    </Button>-->
 
-    <Button
-        android:id="@+id/set_start_position"
-        android:layout_marginTop="10dp"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/set_start_position">
-    </Button>
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/set_endpoint"
-        android:layout_marginTop="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/set_endpoint">
-    </Button>
+        <Button
+            android:id="@+id/set_start_position"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/set_start_position">
+        </Button>
 
-    <Button
-        android:id="@+id/clear"
-        android:layout_marginTop="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/clear">
-    </Button>
+        <Button
+            android:id="@+id/set_endpoint"
+            android:layout_marginStart="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/set_endpoint">
+        </Button>
+
+        <Button
+            android:id="@+id/clear"
+            android:layout_marginStart="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/clear">
+        </Button>
+    </LinearLayout>
 
 <!--    <Button-->
 <!--        android:id="@+id/follow"-->
@@ -62,3 +78,4 @@
 <!--        android:text="@string/inspection">-->
 <!--    </Button>-->
 </LinearLayout>
+<!--</android.support.v4.widget.NestedScrollView>-->

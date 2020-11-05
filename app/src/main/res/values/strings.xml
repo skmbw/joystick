@@ -23,11 +23,11 @@
     <string name="control_center">控制中心</string>
     <string name="operation">手柄操控</string>
     <string name="click">Click</string>
-    <string name="clear">Clear</string>
+    <string name="clear">重置</string>
     <string name="follow">跟随</string>
     <string name="inspection">巡检</string>
-    <string name="set_start_position">设置起点和方向</string>
-    <string name="set_endpoint">设置终点和方向</string>
+    <string name="set_start_position">设置起点</string>
+    <string name="set_endpoint">设置终点</string>
 
     <string name="follow_target">拍摄跟随目标</string>
     <string name="change_target">切换跟随目标</string>
