@@ -76,9 +76,6 @@ public class NavigationActivity extends AppCompatActivity {
 
     private ScheduledExecutorService scheduledExecutorService;
 
-    private int statusBarHeight;
-    private int titleBarHeight = 168;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -179,113 +176,7 @@ public class NavigationActivity extends AppCompatActivity {
             this.endFlag.set(true);
             this.mFingerPaintImageView.setInEditMode(true);
         });
-
-//        findViewById(R.id.follow).setOnClickListener(v -> {
-//            Intent intent = new Intent(this, FollowActivity.class);
-//            startActivity(intent);
-//        });
-//
-//        findViewById(R.id.inspection).setOnClickListener(v -> {
-//            Intent intent = new Intent(this, InspectionActivity.class);
-//            startActivity(intent);
-//        });
     }
-
-    /**
-     * y轴加上屏幕高度
-     *
-     * @param y
-     * @return
-     */
-    private float addScreenHeightY(float y) {
-        return (float) BigDecimalUtils.round((double)(y + 18), 2);
-    }
-
-//    /**
-//     * x轴加上屏幕左边距
-//     *
-//     * @param x
-//     * @return
-//     */
-//    private float addScreenWidthX(float x) {
-//        return (float) BigDecimalUtils.round((double)(x + 18), 2);
-//    }
-//
-//    /**
-//     * y轴减去屏幕高度
-//     * @param y
-//     * @return
-//     */
-//    private float subtractScreenHeightY(float y) {
-//        return (float) BigDecimalUtils.round((double) (y - 18), 2);
-//    }
-//
-//    /**
-//     * x轴减去屏幕左边距18
-//     * @param x
-//     * @return
-//     */
-//    private float subtractScreenWidthX(float x) {
-//        return (float) BigDecimalUtils.round((double) (x - 18), 2);
-//    }
-//
-//    /**
-//     * 获取状态栏高度——
-//     * 应用区的顶端位置即状态栏的高度
-//     * *注意*该方法不能在初始化的时候用
-//     */
-//    @Override
-//    public void onWindowFocusChanged(boolean hasFocus) {
-//        /*
-//         * 获取状态栏高度——方法1
-//         */
-//        int statusBarHeight1 = -1;
-//        // 获取status_bar_height资源的ID
-//        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-//        if (resourceId > 0) {
-//            //根据资源ID获取响应的尺寸值
-//            statusBarHeight1 = getResources().getDimensionPixelSize(resourceId);
-//        }
-//        Log.e("WangJ", "状态栏-方法1:" + statusBarHeight1);
-//
-//
-////        super.onWindowFocusChanged(hasFocus);
-//        Rect rectangle = new Rect();
-//        getWindow().getDecorView().getWindowVisibleDisplayFrame(rectangle);
-//        Log.d(TAG, "onWindowFocusChanged: 状态栏高度=" + rectangle.top);
-//
-//        statusBarHeight = rectangle.top;
-//
-//        // 屏幕
-//        DisplayMetrics dm = new DisplayMetrics();
-//        getWindowManager().getDefaultDisplay().getMetrics(dm);
-//        Log.e(TAG, "屏幕高:" + dm.heightPixels);
-//
-//        // 应用区域
-//        Rect outRect1 = new Rect();
-//        getWindow().getDecorView().getWindowVisibleDisplayFrame(outRect1);
-//        Log.e(TAG, "应用区顶部" + outRect1.top);
-//        Log.e(TAG, "应用区高" + outRect1.height());
-//
-//        // View绘制区域
-//        Rect outRect2 = new Rect();
-//        getWindow().findViewById(Window.ID_ANDROID_CONTENT).getDrawingRect(outRect2);
-//        Log.e(TAG, "View绘制区域顶部-错误方法：" + outRect2.top);   //不能像上边一样由outRect2.top获取，这种方式获得的top是0，可能是bug吧
-//        View view = getWindow().findViewById(Window.ID_ANDROID_CONTENT);
-//        Log.d(TAG, "onWindowFocusChanged: " + view.getY());
-//        Log.d(TAG, "onWindowFocusChanged: " + view.getHeight());
-//        Log.d(TAG, "onWindowFocusChanged: " + view.getX());
-//        int viewTop = view.getTop();   //要用这种方法
-//        Log.e(TAG, "View绘制区域顶部-正确方法：" + viewTop);
-//        Log.e(TAG, "View绘制区域高度：" + outRect2.height());
-//
-//        /*
-//         * 获取标题栏高度——
-//         * 标题栏高度 = View绘制区顶端位置 - 应用区顶端位置(也可以是状态栏高度)
-//         */
-//        titleBarHeight = viewTop - outRect1.top;
-//        Log.e(TAG, "标题栏高度-方法1：" + titleBarHeight);
-//    }
 
     private void getImage() {
         String url = HOST + API_GET_MAP;
@@ -341,9 +232,6 @@ public class NavigationActivity extends AppCompatActivity {
                     float pixelX = jsonObject.getFloatValue("piexl_x");
                     float pixelY = jsonObject.getFloatValue("piexl_y");
 
-                    // 加屏幕状态栏和标题栏的高度
-//                    float screenY = addScreenHeightY(pixelY);
-//                    float screenX = addScreenWidthX(pixelX);
                     float x = getMapPixelPoint(pixelX);
                     float y = getMapPixelPoint(pixelY);
                     mFingerPaintImageView.drawPoint(x, y, CURRENT_POINT);
