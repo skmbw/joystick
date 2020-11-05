@@ -3,11 +3,13 @@ package com.xuershangda.joystick.nav;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Window;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
@@ -75,6 +77,9 @@ public class NavigationActivity extends AppCompatActivity {
     private static final String CURRENT_POINT = "current_point";
 
     private ScheduledExecutorService scheduledExecutorService;
+
+    private int statusBarHeight;
+    private int titleBarHeight;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -186,6 +191,47 @@ public class NavigationActivity extends AppCompatActivity {
 //            Intent intent = new Intent(this, InspectionActivity.class);
 //            startActivity(intent);
 //        });
+    }
+
+    /**
+     * 获取状态栏高度——
+     * 应用区的顶端位置即状态栏的高度 
+     * *注意*该方法不能在初始化的时候用 
+     */
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        Rect rectangle = new Rect();
+        getWindow().getDecorView().getWindowVisibleDisplayFrame(rectangle);
+        Log.d(TAG, "onWindowFocusChanged: 状态栏高度=" + rectangle.top);
+
+        statusBarHeight = rectangle.top;
+
+        //屏幕
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        Log.e(TAG, "屏幕高:" + dm.heightPixels);
+
+        //应用区域
+        Rect outRect1 = new Rect();
+        getWindow().getDecorView().getWindowVisibleDisplayFrame(outRect1);
+        Log.e(TAG, "应用区顶部" + outRect1.top);
+        Log.e("WangJ", "应用区高" + outRect1.height());
+
+        //View绘制区域
+//        Rect outRect2 = new Rect();
+//        getWindow().findViewById(Window.ID_ANDROID_CONTENT).getDrawingRect(outRect2);
+//        Log.e("WangJ", "View绘制区域顶部-错误方法：" + outRect2.top);   //不能像上边一样由outRect2.top获取，这种方式获得的top是0，可能是bug吧
+        int viewTop = getWindow().findViewById(Window.ID_ANDROID_CONTENT).getTop();   //要用这种方法
+        Log.e(TAG, "View绘制区域顶部-正确方法：" + viewTop);
+//        Log.e("WangJ", "View绘制区域高度：" + outRect2.height());
+
+        /*
+         * 获取标题栏高度——
+         * 标题栏高度 = View绘制区顶端位置 - 应用区顶端位置(也可以是状态栏高度，获取状态栏高度方法3中说过了)
+         */
+        titleBarHeight = viewTop - outRect1.top;
+        Log.e(TAG, "标题栏高度-方法1：" + titleBarHeight);
     }
 
     private void getImage() {
