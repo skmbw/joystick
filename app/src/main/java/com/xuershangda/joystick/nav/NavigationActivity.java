@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import okhttp3.Call;
@@ -79,7 +80,7 @@ public class NavigationActivity extends AppCompatActivity {
     private ScheduledExecutorService scheduledExecutorService;
 
     private int statusBarHeight;
-    private int titleBarHeight;
+    private int titleBarHeight = 168;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,6 +107,7 @@ public class NavigationActivity extends AppCompatActivity {
 
             @Override
             public void onActionDown(float x, float y) {
+//                y = addScreenHeightY(y);
                 Log.d(TAG, "onActionDown: x=" + x + ", y=" + y);
                 if (startFlag.compareAndSet(false, false)) {
                     startX = x;
@@ -120,6 +122,7 @@ public class NavigationActivity extends AppCompatActivity {
 
             @Override
             public void onActionUp(float x, float y) {
+//                y = addScreenHeightY(y);
                 Log.d(TAG, "onActionUp: x=" + x + ", y=" + y);
                 // 设置起点，以抬起，结束为准
                 if (startFlag.compareAndSet(false, true)) {
@@ -151,7 +154,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         // 轮询获取当前点
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-//        scheduledExecutorService.scheduleAtFixedRate(this::getCurrentPoint, 2, 2, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(this::getCurrentPoint, 2, 2, TimeUnit.SECONDS);
 
 //        findViewById(R.id.click).setOnClickListener(v -> {
 //            this.mFingerPaintImageView.drawPoint(300, 440, "test");
@@ -191,6 +194,44 @@ public class NavigationActivity extends AppCompatActivity {
 //            Intent intent = new Intent(this, InspectionActivity.class);
 //            startActivity(intent);
 //        });
+    }
+
+    /**
+     * y轴加上屏幕高度
+     *
+     * @param y
+     * @return
+     */
+    private float addScreenHeightY(float y) {
+        return (float) BigDecimalUtils.round((double)(y + 18), 2);
+    }
+
+    /**
+     * x轴加上屏幕左边距
+     *
+     * @param x
+     * @return
+     */
+    private float addScreenWidthX(float x) {
+        return (float) BigDecimalUtils.round((double)(x + 18), 2);
+    }
+
+    /**
+     * y轴减去屏幕高度
+     * @param y
+     * @return
+     */
+    private float subtractScreenHeightY(float y) {
+        return (float) BigDecimalUtils.round((double) (y - 18), 2);
+    }
+
+    /**
+     * x轴减去屏幕左边距18
+     * @param x
+     * @return
+     */
+    private float subtractScreenWidthX(float x) {
+        return (float) BigDecimalUtils.round((double) (x - 18), 2);
     }
 
     /**
@@ -304,6 +345,10 @@ public class NavigationActivity extends AppCompatActivity {
                     JSONObject jsonObject = (JSONObject) JSON.parse(bytes);
                     float pixelX = jsonObject.getFloatValue("piexl_x");
                     float pixelY = jsonObject.getFloatValue("piexl_y");
+
+                    // 加屏幕状态栏和标题栏的高度
+//                    float screenY = addScreenHeightY(pixelY);
+//                    float screenX = addScreenWidthX(pixelX);
                     float x = getMapPixelPoint(pixelX);
                     float y = getMapPixelPoint(pixelY);
                     mFingerPaintImageView.drawPoint(x, y, CURRENT_POINT);
