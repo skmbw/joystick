@@ -250,9 +250,7 @@ class FingerPaintImageView @JvmOverloads constructor(context: Context,
         val yPos = y.coerceIn(yTranslation, yTranslation + sourceBitmap.intrinsicHeight * scale)
 
         val pairs = pathMaps[name]
-        pathMaps[name] = Path().also { it.moveTo(x, y) } to Paint(pathPaint)
-        val path = getCurrentPath()
-        path?.lineTo(xPos, yPos)
+        pairs?.first?.lineTo(xPos, yPos)
         invalidate() // 调用这个才会开始绘制
     }
 
