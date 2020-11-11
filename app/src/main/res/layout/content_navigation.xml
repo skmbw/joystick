@@ -8,8 +8,8 @@
 
     <com.xuershangda.joystick.view.FingerPaintImageView
         android:id="@+id/finger"
-        android:layout_width="1082.24px"
-        android:layout_height="1594.88px"
+        android:layout_width="1081px"
+        android:layout_height="832px"
         android:scaleType="centerCrop"
         android:adjustViewBounds="true"
         android:src="@drawable/tianzige"

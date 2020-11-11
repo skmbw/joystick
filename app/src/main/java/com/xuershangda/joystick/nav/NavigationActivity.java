@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
@@ -200,6 +201,10 @@ public class NavigationActivity extends AppCompatActivity {
                     mapHeight = bitmap.getHeight();
                     scaleRate = getScaleRate();
                     runOnUiThread(() -> {
+                        ViewGroup.LayoutParams para = mFingerPaintImageView.getLayoutParams();
+                        para.height = (int) (mapHeight * scaleRate);
+                        para.width = (int) (mapWidth * scaleRate);
+                        mFingerPaintImageView.setLayoutParams(para);
                         mFingerPaintImageView.setImageBitmap(bitmap);
                     });
                 } else {
